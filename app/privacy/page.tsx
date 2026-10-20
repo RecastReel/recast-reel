@@ -24,7 +24,7 @@ export default function Privacy() {
    <h2>Who processes it for us</h2>
    <ul>
     <li><strong>MadeByCue</strong> creates the videos and stores uploads and results.</li>
-    <li><strong>Creem</strong> handles checkout, payments and invoices as the merchant of record.</li>
+    <li><strong>Freemius</strong> handles checkout, payments and invoices as the merchant of record.</li>
     <li><strong>Resend</strong> sends sign-in emails.</li>
     <li>Our <strong>hosting and database providers</strong> run the site and store account records.</li>
    </ul>

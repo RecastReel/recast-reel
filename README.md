@@ -35,14 +35,16 @@ every service below is configured. See `.env.example` for each setting.
 | [MadeByCue](https://www.madebycue.dev) | Making the videos | `CUE_API_KEY` |
 | [Neon](https://neon.tech) (Postgres) | Database | `DATABASE_URL` |
 | [Resend](https://resend.com) | Sign-in emails | `RESEND_API_KEY`, `EMAIL_FROM` |
-| [Creem](https://creem.io) | $25/month subscription | `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_PRODUCT_ID`, `CREEM_TEST_MODE=0` |
+| [Freemius](https://freemius.com) | $25/month subscription | `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`, `FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_PLAN_ID`, `FREEMIUS_SANDBOX=false` |
 | Better Auth | Sessions | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` |
 
 Setup:
 
 1. Run `npm run db:migrate` against your Neon database.
 2. Verify your sending domain in Resend.
-3. In Creem, create the monthly product and add the webhook
-   `https://<your-domain>/api/auth/creem/webhook`.
+3. In Freemius, create the $25/month plan. Add the webhook
+   `https://<your-domain>/api/webhooks/freemius` (all `license.*` events, plus
+   `subscription.created` and `subscription.cancelled`), and set the plan's checkout
+   redirect URL to `https://<your-domain>/api/billing/redirect`.
 4. Ask MadeByCue to allow browser uploads from your domain.
 5. Optionally, change the monthly allowance with `MONTHLY_VIDEO_SECONDS` (default 120).

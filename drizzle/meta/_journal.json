@@ -15,6 +15,20 @@
       "when": 1792450504311,
       "tag": "0001_creation_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792508539060,
+      "tag": "0002_freemius_entitlement",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792508578403,
+      "tag": "0003_drop_creem",
+      "breakpoints": true
     }
   ]
 }

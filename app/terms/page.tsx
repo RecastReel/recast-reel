@@ -19,7 +19,7 @@ export default function Terms() {
     <li>Recast Reel costs ${PLAN.priceUsd} per month, plus any applicable taxes, and includes {PLAN.seconds} seconds of video generation each billing month.</li>
     <li>Each video uses seconds equal to its length. Videos that fail, are cancelled or expire give their seconds back.</li>
     <li>Unused seconds don’t roll over. Your allowance resets at the start of each billing month.</li>
-    <li>Payments are processed by Creem as merchant of record, and the subscription renews monthly until you cancel.</li>
+    <li>Payments are processed by Freemius as merchant of record, and the subscription renews monthly until you cancel.</li>
     <li>You can cancel anytime from your account page and keep access until the end of the period you paid for. Payments aren’t refunded for partial months, except where the law requires it.</li>
     <li>We may change the price or allowance with at least 30 days’ notice. Changes apply from your next billing month.</li>
    </ul>

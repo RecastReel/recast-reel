@@ -14,7 +14,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
  return (
   <div className="site">
    <SiteHeader signedIn />
-   <Studio initialPlan={plan} productId={PLAN.productId} price={PLAN.priceUsd} subscribed={params.subscribed === '1'} />
+   <Studio initialPlan={plan} price={PLAN.priceUsd} subscribed={params.subscribed === '1'} />
   </div>
  );
 }

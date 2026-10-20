@@ -41,7 +41,7 @@ export default async function Account() {
       <div className="panel-actions"><Link href="/studio" className="button-primary">Open studio</Link><ManageBillingButton /></div>
      </> : <>
       <p className="muted">No active plan. Subscribe for {PLAN.seconds} seconds of video generation every month.</p>
-      <div className="panel-actions"><SubscribeButton productId={PLAN.productId} label={`Subscribe · $${PLAN.priceUsd}/month`} /></div>
+      <div className="panel-actions"><SubscribeButton label={`Subscribe · $${PLAN.priceUsd}/month`} /></div>
      </>}
     </section>
    </main>

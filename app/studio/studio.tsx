@@ -91,12 +91,10 @@ const fromFile = (file: File): Pick => ({
 
 export function Studio({
   initialPlan,
-  productId,
   price,
   subscribed,
 }: {
   initialPlan: PlanStatus;
-  productId: string;
   price: number;
   subscribed: boolean;
 }) {
@@ -350,10 +348,7 @@ export function Studio({
                     : "Videos that fail give their seconds back. Cancel anytime."}
                 </p>
                 {!subscribed && (
-                  <SubscribeButton
-                    productId={productId}
-                    label="Subscribe to start"
-                  />
+                  <SubscribeButton label="Subscribe to start" />
                 )}
               </div>
             ) : (

@@ -8,7 +8,7 @@
  *   refuses to serve rather than run without auth email or billing. */
 export const isProduction = process.env.NODE_ENV === 'production';
 
-const HOSTED_SETTINGS = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'RESEND_API_KEY', 'CREEM_API_KEY', 'CREEM_WEBHOOK_SECRET', 'CREEM_PRODUCT_ID', 'CUE_API_KEY'];
+const HOSTED_SETTINGS = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'RESEND_API_KEY', 'FREEMIUS_PRODUCT_ID', 'FREEMIUS_API_KEY', 'FREEMIUS_SECRET_KEY', 'FREEMIUS_PUBLIC_KEY', 'FREEMIUS_PLAN_ID', 'CUE_API_KEY'];
 
 export function assertHostedConfig() {
  if (!isProduction) return;
@@ -18,8 +18,8 @@ export function assertHostedConfig() {
 
 export const localMode = () => !isProduction && process.env.LOCAL_MODE !== '0';
 
-/** Creem billing: always in production; with LOCAL_MODE=0, when configured. */
-export const billingEnabled = () => isProduction || (!localMode() && Boolean(process.env.CREEM_API_KEY));
+/** Freemius billing: always in production; with LOCAL_MODE=0, when configured. */
+export const billingEnabled = () => isProduction || (!localMode() && Boolean(process.env.FREEMIUS_API_KEY));
 
 /** With LOCAL_MODE=0 and no Resend, sign-in links are shown on the page. */
 export const showSignInLinks = () => !isProduction && !process.env.RESEND_API_KEY;
