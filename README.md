@@ -44,7 +44,7 @@ Setup:
 2. Verify your sending domain in Resend.
 3. In Freemius, create the $25/month plan. Add the webhook
    `https://<your-domain>/api/webhooks/freemius` (all `license.*` events, plus
-   `subscription.created` and `subscription.cancelled`), and set the plan's checkout
+   `subscription.created` and `subscription.cancelled`), and set the plan's checkout.
    redirect URL to `https://<your-domain>/api/billing/redirect`.
 4. Ask MadeByCue to allow browser uploads from your domain.
 5. Optionally, change the monthly allowance with `MONTHLY_VIDEO_SECONDS` (default 120)
