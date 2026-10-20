@@ -46,7 +46,7 @@ Setup:
    `https://<your-domain>/api/webhooks/freemius` (all `license.*` events, plus
    `subscription.created` and `subscription.cancelled`), and set the plan's checkout.
    redirect URL to `https://<your-domain>/api/billing/redirect`.
-4. Ask MadeByCue to allow browser uploads from your domain.
+4. Ask MadeByCue to allow browser uploads from your domain
 5. Optionally, change the credits added each month with `MONTHLY_CREDIT_USD`
    (default 20; 1 credit = $1). Each video uses MadeByCue's price for it, and
    unused credits carry over
