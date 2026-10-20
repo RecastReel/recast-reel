@@ -48,4 +48,4 @@ Setup:
    redirect URL to `https://<your-domain>/api/billing/redirect`.
 4. Ask MadeByCue to allow browser uploads from your domain.
 5. Optionally, change the monthly credit with `MONTHLY_CREDIT_USD` (default 20).
-   Each video uses MadeByCue's price for it.
+   Each video uses MadeByCue's price for it
