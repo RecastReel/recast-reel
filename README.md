@@ -1,26 +1,29 @@
 # Recast Reel
 
 Make AI videos in your browser. Describe a scene to generate a video, optionally guided by
-reference images, or upload a clip and swap a new character into it. The videos are made
-by the [MadeByCue](https://www.madebycue.dev) API.
+reference images, or upload a clip and swap a new character into it.
 
 Use the hosted version at [recastreel.com](https://recastreel.com), or run it yourself.
 
 ## Run it locally
 
-All you need is a MadeByCue API key.
+1. Get an API key from [madebycue.dev](https://www.madebycue.dev).
+2. Create a file named `.env.local` in this folder and add your key:
 
-```bash
-npm install
-echo "CUE_API_KEY=your-madebycue-key" > .env.local
-npm run dev
-```
+   ```
+   CUE_API_KEY=your-api-key
+   ```
 
-Open http://localhost:3000. There's no sign-up and no billing. Videos are charged to your
-API key, and your data is kept in a local database in `.data/`. Use port 3000, because
-MadeByCue only accepts browser uploads from `localhost:3000`.
+3. Install and start the app:
 
-This mode is for your own machine. Don't expose it to the internet.
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+4. Open http://localhost:3000 and start creating.
+
+You don't need to sign up or pay; videos are charged to your API key.
 
 ## Run it in production
 
