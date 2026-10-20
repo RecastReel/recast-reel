@@ -1,11 +1,3 @@
-/** Ready-made fictional characters (see public/characters/PROMPTS.md). */
-export const CHARACTERS = [
- { id: 'camille', name: 'Camille', url: '/characters/camille.png' },
- { id: 'jade', name: 'Jade', url: '/characters/jade.png' },
- { id: 'sienna', name: 'Sienna', url: '/characters/sienna.png' },
- { id: 'vivian', name: 'Vivian', url: '/characters/vivian.png' },
-];
-
 export type Showcase = {
  id: string;
  title: string;
@@ -14,12 +6,16 @@ export type Showcase = {
  result: string;
  poster: string;
  source?: string;
- characterId?: string;
+ /** Label shown when there is no source to compare, e.g. "Edited". */
+ tag?: string;
 };
 
 /** Finished examples shown on the landing page. Each entry is a real video
  * made with the app; add one by placing its files in public/showcase/. */
-export const SHOWCASE: Showcase[] = [];
+export const SHOWCASE: Showcase[] = [
+ { id: 'polar-bear', title: 'A goat pulls a polar bear frozen in ice', result: '/showcase/polar-bear-generation.mp4', poster: '/showcase/polar-bear-generation.jpg' },
+ { id: 'sneaker-edit', title: 'New sneaker color, same presenter and background', result: '/showcase/sneaker-edit.mp4', poster: '/showcase/sneaker-edit.jpg', tag: 'Edited' },
+];
 
 export const FAQ = [
  { q: 'How do my seconds get used?', a: 'Every second of video you create counts once: a 10 second generated video uses 10 seconds, and a 90 second character swap uses 90 seconds.' },

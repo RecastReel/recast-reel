@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CHARACTERS, FAQ, SHOWCASE } from '../lib/catalog';
+import { FAQ, SHOWCASE } from '../lib/catalog';
 import { PLAN } from '../lib/plan';
 import { currentSession } from '../lib/session';
 import { ShowcaseCard } from './showcase';
@@ -30,11 +30,6 @@ export default async function Landing() {
      {SHOWCASE.length
       ? <div className="showcase-grid">{SHOWCASE.map((item) => <ShowcaseCard key={item.id} item={item} />)}</div>
       : <p className="section-note">New examples are on the way.</p>}
-     <h3 className="subhead">Characters ready to use</h3>
-     <div className="character-row">
-      {CHARACTERS.map((c) => <figure key={c.id}><img src={c.url} alt={c.name} /><figcaption>{c.name}</figcaption></figure>)}
-      <figure className="character-own"><span>+</span><figcaption>Or upload your own</figcaption></figure>
-     </div>
     </section>
 
     <section className="section" aria-labelledby="how-title">
@@ -54,7 +49,7 @@ export default async function Landing() {
       <ul>
        <li>Generate 5–15 second videos, with or without reference images</li>
        <li>Swap characters into your own 1–10 minute videos</li>
-       <li>Ready-made characters, or upload your own</li>
+       <li>Use any character image you upload</li>
        <li>Videos that fail give their seconds back</li>
        <li>Download finished videos for 7 days</li>
        <li>Cancel anytime</li>

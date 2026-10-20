@@ -11,7 +11,6 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
-import { CHARACTERS } from "../../lib/catalog";
 import {
   GENERATE_RATIOS,
   GENERATE_SECONDS,
@@ -216,21 +215,6 @@ export function Studio({
         list.length < MAX_REFERENCES ? [...list, fromFile(file)] : list,
       );
   }
-  function toggleCharacter(pick: Pick) {
-    if (mode === "swap")
-      return setCharacter(character?.id === pick.id ? null : pick);
-    setReferences((list) =>
-      list.some((r) => r.id === pick.id)
-        ? list.filter((r) => r.id !== pick.id)
-        : list.length < MAX_REFERENCES
-          ? [...list, pick]
-          : list,
-    );
-  }
-  const picked = (id: string) =>
-    mode === "swap"
-      ? character?.id === id
-      : references.some((r) => r.id === id);
 
   async function upload(pick: Pick, kind: "image" | "video") {
     const cached = uploaded.current.get(pick.id);
@@ -489,23 +473,6 @@ export function Studio({
                         </div>
                       </div>
                     )}
-                    <div
-                      className="character-picks"
-                      role="group"
-                      aria-label="Ready-made characters"
-                    >
-                      {CHARACTERS.map((c) => (
-                        <button
-                          key={c.id}
-                          className={picked(c.id) ? "is-picked" : ""}
-                          aria-pressed={picked(c.id)}
-                          title={c.name}
-                          onClick={() => toggleCharacter(c)}
-                        >
-                          <img src={c.url} alt={c.name} />
-                        </button>
-                      ))}
-                    </div>
                   </div>
                   <textarea
                     aria-label={

@@ -42,7 +42,7 @@ export default function Terms() {
    <p>We may refuse, remove or stop processing content, and suspend or close accounts, that break these rules. When the law requires it, we report illegal content.</p>
 
    <h2>5. AI output</h2>
-   <p>Videos are made by AI models and can be inaccurate, inconsistent or unexpected. The ready-made characters are fictional. You decide how to use what you create and you’re responsible for it. Similar prompts from other users can produce similar results.</p>
+   <p>Videos are made by AI models and can be inaccurate, inconsistent or unexpected. You decide how to use what you create and you’re responsible for it. Similar prompts from other users can produce similar results.</p>
 
    <h2>6. Availability</h2>
    <p>We work to keep Recast Reel running well, but the service is provided “as is” and “as available”. We don’t guarantee it will be uninterrupted, error-free, or finish within any particular time. We may change or discontinue features. If we shut down the service, we’ll give notice and refund any prepaid, unused subscription period.</p>
