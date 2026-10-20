@@ -9,7 +9,7 @@ Premium features are gated by `requirePlan()` in `lib/swap-api.ts`, which return
 
 | Premium feature | Entry point | Gated by |
 | --- | --- | --- |
-| Generate a video / swap a character | `POST /api/swap/swaps` | `requirePlan` + monthly USD credit (MadeByCue's estimate, then its charge) |
+| Generate a video / swap a character | `POST /api/swap/swaps` | `requirePlan` + credit balance (credits carry over; MadeByCue's estimate, then its charge) |
 | Upload media for a creation | `POST /api/swap/uploads` | `requirePlan` |
 
 Local mode (`npm run dev` without `LOCAL_MODE=0`) has billing off; `planStatus()`

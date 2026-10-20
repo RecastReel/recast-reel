@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { usd } from '../../lib/options';
+import { credits } from '../../lib/options';
 import { PLAN } from '../../lib/plan';
 import { CONTACT, LegalPage } from '../legal';
 
@@ -15,14 +15,14 @@ export default function Terms() {
    <h2>1. Who can use Recast Reel</h2>
    <p>You must be at least 18 and able to enter a binding contract. You’re responsible for your account and for everything created with it. Keep access to your email secure, because sign-in links are sent there.</p>
 
-   <h2>2. Subscription and credit</h2>
+   <h2>2. Subscription and credits</h2>
    <ul>
-    <li>Recast Reel costs ${PLAN.priceUsd} per month, plus any applicable taxes, and includes {usd(PLAN.creditCents)} of video credit each billing month.</li>
-    <li>Each video uses credit equal to our video provider’s price for it, shown before you start it. The final amount can be slightly higher or lower once the video is finished. Videos that fail, are cancelled or expire give their credit back.</li>
-    <li>Unused credit doesn’t roll over and has no cash value. Your credit resets at the start of each billing month.</li>
+    <li>Recast Reel costs ${PLAN.priceUsd} per month, plus any applicable taxes, and adds {credits(PLAN.creditCents)} to your balance each billing month. One credit is worth $1 of video.</li>
+    <li>Each video uses credits equal to our video provider’s price for it, shown before you start it. The final amount can be slightly higher or lower once the video is finished. Videos that fail, are cancelled or expire give their credits back.</li>
+    <li>Unused credits don’t expire and roll over to later months. You can spend them while your subscription is active; if you cancel, they are kept and become usable again when you resubscribe. Credits have no cash value and aren’t refundable.</li>
     <li>Payments are processed by Freemius as merchant of record, and the subscription renews monthly until you cancel.</li>
     <li>You can cancel anytime from your account page and keep access until the end of the period you paid for. Payments aren’t refunded for partial months, except where the law requires it.</li>
-    <li>We may change the price or monthly credit with at least 30 days’ notice. Changes apply from your next billing month.</li>
+    <li>We may change the price or monthly credits with at least 30 days’ notice. Changes apply from your next billing month.</li>
    </ul>
 
    <h2>3. Your content</h2>
@@ -39,7 +39,7 @@ export default function Terms() {
     <li>infringes someone else’s copyright, trademark, privacy or publicity rights;</li>
     <li>is otherwise illegal where you or the people depicted live.</li>
    </ul>
-   <p>You also may not try to get around the monthly credit, access other people’s videos, overload or probe the service, or resell access without our written permission. Where the law requires AI-generated media to be labelled, you are responsible for labelling it.</p>
+   <p>You also may not try to get around your credit balance, access other people’s videos, overload or probe the service, or resell access without our written permission. Where the law requires AI-generated media to be labelled, you are responsible for labelling it.</p>
    <p>We may refuse, remove or stop processing content, and suspend or close accounts, that break these rules. When the law requires it, we report illegal content.</p>
 
    <h2>5. AI output</h2>

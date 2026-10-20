@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { FAQ, SHOWCASE } from '../lib/catalog';
-import { CENTS_PER_SECOND, usd } from '../lib/options';
+import { credits } from '../lib/options';
 import { PLAN } from '../lib/plan';
 import { currentSession } from '../lib/session';
 import { ShowcaseCard } from './showcase';
@@ -22,7 +22,7 @@ export default async function Landing() {
      <p>Describe a video and generate it, with or without reference images. Or upload a clip and swap in a new character while the motion, camera and lighting stay.</p>
      <div className="hero-actions">
       <Link href={start} className="button-primary">Start creating</Link>
-      <Link href="#examples" className="button-quiet">See examples</Link>
+      <Link href="#pricing" className="button-quiet">See pricing</Link>
      </div>
     </section>
 
@@ -46,14 +46,11 @@ export default async function Landing() {
      <h2 id="pricing-title">One simple plan</h2>
      <div className="price-card">
       <div className="price"><strong>${PLAN.priceUsd}</strong><span>/month</span></div>
-      <p className="price-lead">{usd(PLAN.creditCents)} of video credit every month, about {Math.floor(PLAN.creditCents / CENTS_PER_SECOND.generate)} seconds of generated video or {Math.floor(PLAN.creditCents / CENTS_PER_SECOND.swap)} seconds of character swaps.</p>
+      <p className="price-lead">{credits(PLAN.creditCents)} every month</p>
       <ul>
-       <li>Generate 5–15 second videos, with or without reference images</li>
-       <li>Swap characters into your own 1–10 minute videos</li>
-       <li>Use any character image you upload</li>
-       <li>Videos that fail give their credit back</li>
-       <li>Download finished videos for 7 days</li>
-       <li>Cancel anytime</li>
+       <li>Character swaps for any 1–10 minute video</li>
+       <li>Video generation</li>
+       <li>Customer support</li>
       </ul>
       <Link href={start} className="button-primary">{session ? 'Open studio' : 'Get started'}</Link>
      </div>

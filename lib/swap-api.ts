@@ -12,7 +12,7 @@ import {
 } from "./cue";
 import { getDb } from "./db";
 import { swaps } from "./db/schema";
-import { GENERATE_RATIOS, GENERATE_SECONDS, MAX_REFERENCES, usd } from "./options";
+import { GENERATE_RATIOS, GENERATE_SECONDS, MAX_REFERENCES, credits } from "./options";
 import { MAX_SWAP_SECONDS, MIN_SWAP_SECONDS, planStatus } from "./plan";
 import { sessionFor } from "./session";
 
@@ -258,7 +258,7 @@ async function createSwap(req: NextRequest, userId: string) {
     const plan = await requirePlan(userId, tx);
     if (cents > plan.remainingCents)
       throw new HttpError(
-        `This video costs ${usd(cents)} and you have ${usd(plan.remainingCents)} of credit left this month.`,
+        `This video costs ${credits(cents)} and you have ${credits(plan.remainingCents)} left.`,
         402,
       );
     const [row] = await tx

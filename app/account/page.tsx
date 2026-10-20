@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { localMode } from '../../lib/config';
-import { usd } from '../../lib/options';
+import { credits } from '../../lib/options';
 import { PLAN, planStatus } from '../../lib/plan';
 import { currentSession } from '../../lib/session';
 import { ManageBillingButton, SignOutButton, SubscribeButton } from '../billing-buttons';
@@ -14,7 +14,6 @@ export default async function Account() {
  const session = await currentSession();
  if (!session) redirect('/login?next=/account');
  const plan = await planStatus(session.user.id);
- const used = plan.billing ? Math.min(100, Math.round((plan.usedCents / plan.creditCents) * 100)) : 0;
  const date = plan.periodEnd ? new Date(plan.periodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : null;
  return (
   <div className="site">
@@ -35,13 +34,12 @@ export default async function Account() {
       <div className="panel-actions"><Link href="/studio" className="button-primary">Open studio</Link></div>
      </> : plan.active ? <>
       <p>Recast Reel · ${PLAN.priceUsd}/month{date && <><br /><span className="muted">{plan.cancelAtPeriodEnd ? `Ends on ${date}` : `Renews on ${date}`}</span></>}</p>
-      <div className="usage" aria-label="Video credit used this month">
-       <div className="usage-bar"><span style={{ width: `${used}%` }} /></div>
-       <p><strong>{usd(plan.remainingCents)}</strong> of {usd(plan.creditCents)} credit left this month</p>
+      <div className="usage">
+       <p><strong>{credits(plan.remainingCents)} left</strong><br /><span className="muted">{credits(plan.creditCents)} added every month. Credits don’t expire.</span></p>
       </div>
       <div className="panel-actions"><Link href="/studio" className="button-primary">Open studio</Link><ManageBillingButton /></div>
      </> : <>
-      <p className="muted">No active plan. Subscribe for {usd(PLAN.creditCents)} of video credit every month.</p>
+      <p className="muted">No active plan. Subscribe for {credits(PLAN.creditCents)} every month.</p>
       <div className="panel-actions"><SubscribeButton label={`Subscribe · $${PLAN.priceUsd}/month`} /></div>
      </>}
     </section>

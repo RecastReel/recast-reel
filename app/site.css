@@ -83,8 +83,6 @@
 .panel h2 { margin: 0 0 10px; color: #999; font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: .6px; }
 .panel p { margin: 0 0 14px; font-size: 14px; line-height: 1.6; }
 .muted { color: #999; }
-.usage-bar { height: 8px; border-radius: 4px; background: #2e2e2e; overflow: hidden; }
-.usage-bar span { display: block; height: 100%; background: #b5cce6; }
 .usage p { margin-top: 10px; color: #bbb; font-size: 13px; }
 .panel-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
@@ -107,6 +105,9 @@
 .site-footer nav a { color: #aaa; }
 .site-footer nav a:hover { color: #eee; }
 .site-footer p { margin: 0; }
+.site-footer .site-footer-source { margin-bottom: 6px; }
+.site-footer-source a { color: #aaa; text-decoration: underline; }
+.site-footer-source a:hover { color: #eee; }
 .auth-card > p.auth-legal { margin: 2px 0 0; color: #888; font-size: 11px; }
 .auth-legal a { color: #bbb; text-decoration: underline; }
 

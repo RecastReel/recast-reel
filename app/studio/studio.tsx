@@ -15,7 +15,7 @@ import {
   GENERATE_RATIOS,
   GENERATE_SECONDS,
   MAX_REFERENCES,
-  usd,
+  credits,
 } from "../../lib/options";
 import {
   swapApi,
@@ -298,7 +298,7 @@ export function Studio({
       );
       if (costCents > plan.remainingCents)
         return setError(
-          `This video costs ${usd(costCents)} and you have ${usd(plan.remainingCents)} of credit left this month.`,
+          `This video costs ${credits(costCents)} and you have ${credits(plan.remainingCents)} left.`,
         );
       setPrepared({ body, costCents, key: crypto.randomUUID() });
     } catch (err) {
@@ -355,18 +355,22 @@ export function Studio({
         <div className="creation-stage">
           <section className="swap-intro">
             <h1>What are you making today?</h1>
+            {plan.billing && plan.active && (
+              <p className="credits-left">
+                {credits(plan.remainingCents)} left
+              </p>
+            )}
           </section>
           <section className="composer-stage" aria-label="Composer">
             {!plan.active ? (
               <div className="paywall">
                 <strong>
-                  ${price}/month · {usd(plan.creditCents)} of video credit
-                  every month
+                  ${price}/month · {credits(plan.creditCents)} every month
                 </strong>
                 <p>
                   {subscribed
                     ? "Confirming your subscription… this takes a few seconds."
-                    : "Videos that fail give their credit back. Cancel anytime."}
+                    : "Videos that fail give their credits back. Cancel anytime."}
                 </p>
                 {!subscribed && (
                   <SubscribeButton label="Subscribe to start" />
@@ -576,14 +580,14 @@ export function Studio({
                       <p>
                         {plan.billing ? (
                           <>
-                            This costs about {usd(prepared.costCents)} of your{" "}
-                            {usd(plan.remainingCents)} credit left. If it fails,
-                            the credit comes back.
+                            This uses about {credits(prepared.costCents)} of
+                            your {credits(plan.remainingCents)}. If it fails,
+                            they come back.
                           </>
                         ) : (
                           <>
-                            This costs about {usd(prepared.costCents)} on your
-                            MadeByCue API key.
+                            This costs about ${(prepared.costCents / 100).toFixed(2)}{" "}
+                            on your MadeByCue API key.
                           </>
                         )}
                       </p>
@@ -708,7 +712,7 @@ export function Studio({
                       {!terminal(s.status) && <TaskTimer task={s} />}
                       {s.refunded && (
                         <span className="task-wait-note">
-                          {usd(s.costCents)} returned to your credit.
+                          {credits(s.costCents)} returned to your balance.
                         </span>
                       )}
                       <div className="task-actions">

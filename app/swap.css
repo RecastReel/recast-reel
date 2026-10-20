@@ -26,6 +26,7 @@
 .swap-intro { position: relative; text-align: center; }
 .swap-intro h1 { font-size: 20px; font-weight: 400; line-height: 26px; letter-spacing: 0; margin: 0 0 26px; }
 .swap-intro>p { max-width: 510px; margin: -16px auto 22px; color: #aaa; font-size: 12px; line-height: 18px; }
+.swap-intro>.credits-left { display: table; margin: -14px auto 20px; padding: 4px 11px; border: 1px solid #3b3b3b; border-radius: 20px; background: #212121; color: #b4cbe2; font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; }
 .composer-stage { position: relative; width: min(564px, 100%); margin: 0 auto; }
 .composer { position: relative; border: 1px solid #3b3b3b; border-radius: 27px; background: #212121; padding: 14px 16px 13px; }
 .composer:focus-within { border-color: #60656b; }

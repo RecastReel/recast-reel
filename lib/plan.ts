@@ -1,11 +1,11 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { billingEnabled } from './config';
 import { getDb, type Db } from './db';
 import { swaps, user_fs_entitlement } from './db/schema';
 import { freemius, planId } from './freemius';
 
-/** The single subscription: $25/month for a monthly credit spent at
- * MadeByCue's own prices. */
+/** The single subscription: $25/month adds credits (1 credit = $1) spent at
+ * MadeByCue's own prices. Unused credits carry over. */
 export const PLAN = {
  name: 'Recast Reel',
  priceUsd: 25,
@@ -21,11 +21,18 @@ export type PlanStatus = {
  active: boolean;
  cancelAtPeriodEnd: boolean;
  periodEnd: string | null;
- /** Monthly credit, spent and left, in US cents. */
+ /** Monthly credit added, all-time spend and the unexpired balance, in US cents. */
  creditCents: number;
  usedCents: number;
  remainingCents: number;
 };
+
+/** Billing months begun between `from` and `until`, counting the first. */
+export function monthsStarted(from: Date, until: Date) {
+ let months = 0;
+ for (const next = new Date(from); next < until && months < 1200; months++) next.setUTCMonth(next.getUTCMonth() + 1);
+ return months;
+}
 
 /** Access follows the user's Freemius subscription license: valid until it
  * expires, including after renewal is cancelled. */
@@ -36,15 +43,15 @@ export async function planStatus(userId: string, executor?: Pick<Db, 'select'>):
  const plan = planId();
  const current = (freemius().entitlement.getActives(rows.filter((row) => !plan || row.fsPlanId === plan)) ?? [])
   .sort((a, b) => (b.expiration?.getTime() ?? Infinity) - (a.expiration?.getTime() ?? Infinity))[0];
- const now = Date.now();
- // The credit resets each billing month, which ends at the expiration.
- const monthBeforeEnd = current?.expiration ? new Date(current.expiration) : undefined;
- monthBeforeEnd?.setUTCMonth(monthBeforeEnd.getUTCMonth() - 1);
- const since = current
-  ? new Date(Math.max(current.createdAt.getTime(), monthBeforeEnd?.getTime() ?? 0))
-  : new Date(now - 30 * 24 * 60 * 60 * 1000);
+ const now = new Date();
+ // Credits never expire: every billing month started on any subscription adds
+ // the monthly credit, and every video ever made spends from that total.
+ const granted = rows
+  .filter((row) => row.type === 'subscription' && (!plan || row.fsPlanId === plan))
+  .reduce((sum, row) => sum + monthsStarted(row.createdAt, row.expiration && row.expiration < now ? row.expiration : now), 0)
+  * PLAN.creditCents;
  const [used] = await db.select({ cents: sql<number>`coalesce(sum(${swaps.costCents}), 0)::int` }).from(swaps)
-  .where(and(eq(swaps.userId, userId), eq(swaps.refunded, false), gte(swaps.createdAt, since)));
+  .where(and(eq(swaps.userId, userId), eq(swaps.refunded, false)));
  const usedCents = Number(used?.cents ?? 0);
  return {
   billing: true,
@@ -53,6 +60,6 @@ export async function planStatus(userId: string, executor?: Pick<Db, 'select'>):
   periodEnd: (current?.renewalDate ?? current?.expiration)?.toISOString() ?? null,
   creditCents: PLAN.creditCents,
   usedCents,
-  remainingCents: current ? Math.max(0, PLAN.creditCents - usedCents) : 0,
+  remainingCents: current ? Math.max(0, granted - usedCents) : 0,
  };
 }
