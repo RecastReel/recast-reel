@@ -17,6 +17,7 @@
     "better-auth": "^1.7.11",
     "drizzle-orm": "^0.45.4",
     "lucide-react": "^0.468.0",
+    "mediabunny": "^1.62.0",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

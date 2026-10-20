@@ -4,6 +4,8 @@ export type Showcase = {
  /** Files under public/showcase/. A swap has a source video; a generated
   * video has none. */
  result: string;
+ /** Has sound worth hearing: autoplays muted with an unmute button. */
+ audio?: boolean;
  poster: string;
  source?: string;
  /** Label shown when there is no source to compare, e.g. "Edited". */
@@ -13,8 +15,7 @@ export type Showcase = {
 /** Finished examples shown on the landing page. Each entry is a real video
  * made with the app; add one by placing its files in public/showcase/. */
 export const SHOWCASE: Showcase[] = [
- { id: 'polar-bear', title: 'A goat pulls a polar bear frozen in ice', result: '/showcase/polar-bear-generation.mp4', poster: '/showcase/polar-bear-generation.jpg' },
- { id: 'sneaker-edit', title: 'New sneaker color, same presenter and background', result: '/showcase/sneaker-edit.mp4', poster: '/showcase/sneaker-edit.jpg', tag: 'Edited' },
+ { id: 'character-swap', title: 'A new character swapped into a film scene', result: '/showcase/character-swap.mp4', poster: '/showcase/character-swap.jpg', tag: 'Swapped', audio: true },
 ];
 
 export const FAQ = [

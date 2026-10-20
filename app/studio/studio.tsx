@@ -27,6 +27,7 @@ import {
 } from "../../lib/swap-client";
 import { SubscribeButton } from "../billing-buttons";
 import { TaskTimer } from "./task-timer";
+import { TrimDialog } from "./trim-dialog";
 import "../swap.css";
 
 type Mode = "swap" | "generate";
@@ -97,6 +98,10 @@ export function Studio({
   const [mode, setMode] = useState<Mode>("swap");
   const [character, setCharacter] = useState<Pick | null>(null);
   const [clip, setClip] = useState<(Pick & { seconds: number }) | null>(null);
+  const [trimming, setTrimming] = useState<{
+    file: File;
+    duration: number;
+  } | null>(null);
   const [references, setReferences] = useState<Pick[]>([]);
   const [length, setLength] = useState(GENERATE_SECONDS[0]);
   const [ratio, setRatio] = useState(GENERATE_RATIOS[0]);
@@ -199,12 +204,23 @@ export function Studio({
     setError("");
     if (!["video/mp4", "video/quicktime"].includes(file.type))
       return setError("Choose an MP4 or MOV video.");
-    if (file.size > 1024 * 1024 * 1024)
-      return setError("Videos must be under 1 GB.");
     try {
       const length = await localDuration(file);
-      if (length < MIN_SECONDS - 0.5 || length > MAX_SECONDS + 0.5)
-        return setError("Choose a video between 1 and 10 minutes long.");
+      if (length < MIN_SECONDS - 0.5)
+        return setError("Choose a video at least 1 minute long.");
+      // Every swap source goes through the trimmer to pick its 1–10 minutes.
+      setTrimming({ file, duration: length });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not read this video.",
+      );
+    }
+  }
+  async function takeClip(file: File | null) {
+    setTrimming(null);
+    if (!file) return;
+    try {
+      const length = await localDuration(file);
       setClip({ ...fromFile(file), seconds: Math.ceil(length) });
     } catch (err) {
       setError(
@@ -728,6 +744,16 @@ export function Studio({
           e.target.value = "";
         }}
       />
+      {trimming && (
+        <TrimDialog
+          file={trimming.file}
+          duration={trimming.duration}
+          minimum={MIN_SECONDS}
+          maximum={MAX_SECONDS}
+          maxBytes={1024 * 1024 * 1024}
+          onDone={(file) => void takeClip(file)}
+        />
+      )}
       <input
         ref={videoInput}
         type="file"

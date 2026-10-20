@@ -146,6 +146,45 @@
  .swaps-grid { grid-template-columns: 1fr; }
  .feature-image, .task-preview { height: auto; aspect-ratio: 16/9; }
 }
+/* Clip trimmer for swap sources (layout from the MadeByCue playground). */
+.clip-dialog { width: min(640px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); overflow-y: auto; margin: auto; padding: 22px; border: 1px solid #3b3b3b; border-radius: 23px; background: #212121; color: #eee; box-shadow: 0 20px 60px #0008; }
+.clip-dialog[open] { display: grid; gap: 18px; }
+.clip-dialog::backdrop { background: #000b; backdrop-filter: blur(3px); }
+.clip-head h2 { margin: 0 0 6px; font-size: 16px; font-weight: 500; }
+.clip-head p { margin: 0; color: #aaa; font-size: 12px; line-height: 1.6; }
+.clip-preview { position: relative; display: grid; place-items: center; height: clamp(160px, 35dvh, 340px); overflow: hidden; border-radius: 15px; background: #111; }
+.clip-preview video { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.swap .clip-play { position: absolute; bottom: 12px; left: 12px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: #eee; color: #111; }
+.swap .clip-play:hover:not(:disabled) { background: #fff; }
+.clip-preview-time { position: absolute; right: 12px; bottom: 16px; padding: 3px 8px; border-radius: 10px; background: #111c; color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; }
+.clip-timeline-area { padding: 0 10px; }
+.clip-timeline { position: relative; height: 58px; border-radius: 9px; background: #181818; user-select: none; }
+.clip-filmstrip { display: block; width: 100%; height: 100%; border-radius: 9px; }
+.clip-shade { position: absolute; top: 0; bottom: 0; background: #000a; pointer-events: none; }
+.swap .clip-selection { position: absolute; top: 0; height: 100%; padding: 0; border: 0; border-block: 3px solid #a8c9ed; border-radius: 0; background: transparent; cursor: grab; touch-action: none; }
+.swap .clip-selection:active { cursor: grabbing; }
+.swap .clip-handle { position: absolute; z-index: 2; top: -3px; display: grid; place-items: center; width: 20px; height: 64px; padding: 0; border: 0; border-radius: 7px; background: #a8c9ed; color: #16283b; transform: translateX(-50%); cursor: ew-resize; touch-action: none; }
+.clip-handle::before { content: ''; position: absolute; inset: -6px; }
+.swap .clip-handle:focus-visible, .swap .clip-selection:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.clip-playhead { position: absolute; z-index: 3; top: 4px; bottom: 4px; width: 2px; background: #fff; box-shadow: 0 0 2px #000; pointer-events: none; }
+.clip-ruler { display: flex; justify-content: space-between; padding-top: 9px; color: #888; font-size: 11px; font-variant-numeric: tabular-nums; }
+.clip-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.clip-summary strong { font-size: 13px; font-weight: 500; }
+.clip-summary small { display: block; margin-top: 3px; color: #999; font-size: 11px; }
+.clip-summary label { display: flex; align-items: center; gap: 8px; color: #aaa; font-size: 12px; }
+.clip-summary select { max-width: 110px; padding: 7px 10px; border: 1px solid #484848; border-radius: 15px; background: #2b2b2b; color: #eee; font: inherit; }
+.clip-progress { display: grid; gap: 6px; color: #aaa; font-size: 12px; }
+.clip-progress progress { width: 100%; height: 5px; accent-color: #a8c9ed; }
+.clip-dialog .dock-error { margin: 0; }
+.clip-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; border-top: 1px solid #333; }
+.clip-actions button { min-width: 96px; padding: 10px 16px; border: 0; border-radius: 20px; font-size: 12px; }
+.swap .clip-actions .estimate-confirm:disabled { background: #555; color: #999; }
+@media (max-width: 480px) {
+ .clip-dialog { padding: 18px; }
+ .clip-dialog[open] { gap: 14px; }
+ .clip-timeline { height: 48px; }
+ .swap .clip-handle { height: 54px; }
+}
 @media (prefers-reduced-motion: reduce) {
  html { scroll-behavior: auto; }
  .swap button, .swap a { transition: none; }
