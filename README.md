@@ -47,4 +47,4 @@ Setup:
    `subscription.created` and `subscription.cancelled`), and set the plan's checkout
    redirect URL to `https://<your-domain>/api/billing/redirect`.
 4. Ask MadeByCue to allow browser uploads from your domain.
-5. Optionally, change the monthly allowance with `MONTHLY_VIDEO_SECONDS` (default 120).
+5. Optionally, change the monthly allowance with `MONTHLY_VIDEO_SECONDS` (default 120)
