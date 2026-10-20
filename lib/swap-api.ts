@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import {
   cueJson,
@@ -99,15 +99,35 @@ function publicSwap(row: typeof swaps.$inferSelect) {
 /** Pull the latest task state; a swap that ends without a result stops
  * counting against the allowance. */
 async function refresh(row: typeof swaps.$inferSelect) {
-  if (!row.taskId || TERMINAL.includes(row.status)) return row;
-  const task = await (await upstream(`/api/v1/tasks/${row.taskId}`)).json();
+  if (TERMINAL.includes(row.status)) return row;
   const db = await getDb();
+  if (!row.taskId) {
+    // Never reached MadeByCue (its answer was lost and nobody retried):
+    // after a while, stop holding the seconds.
+    if (Date.now() - row.createdAt.getTime() < 15 * 60 * 1000) return row;
+    const [failed] = await db
+      .update(swaps)
+      .set({ status: "failed", refunded: true, updatedAt: new Date() })
+      .where(and(eq(swaps.id, row.id), isNull(swaps.taskId)))
+      .returning();
+    return failed ?? row;
+  }
+  let task: Record<string, unknown>;
+  try {
+    task = await (await upstream(`/api/v1/tasks/${row.taskId}`)).json();
+  } catch (error) {
+    // MadeByCue deletes tasks after 7 days; one that never finished is
+    // over, and its hold was released, so return the seconds.
+    if (!(error instanceof HttpError && error.status === 404)) throw error;
+    task = { ...(row.task ?? {}), status: "expired" };
+  }
+  const status = String(task.status);
   const [updated] = await db
     .update(swaps)
     .set({
-      status: String(task.status),
+      status,
       task,
-      refunded: REFUNDABLE.includes(task.status) ? true : row.refunded,
+      refunded: REFUNDABLE.includes(status) ? true : row.refunded,
       updatedAt: new Date(),
     })
     .where(eq(swaps.id, row.id))
@@ -143,7 +163,7 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
       seconds,
       prompt: text,
       task: {
-        task: "video.generate",
+        model: "minimax-h3",
         prompt: text,
         duration_seconds: seconds,
         aspect_ratio: ratio,
@@ -168,8 +188,7 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
     seconds: Math.ceil(Number(video.seconds)),
     prompt,
     task: {
-      task: "video.edit",
-      edit_mode: "character_swap",
+      model: "swap",
       source_video: video.url,
       reference_images: [character.url],
       prompt,
@@ -196,6 +215,10 @@ async function createSwap(req: NextRequest, userId: string) {
       .select()
       .from(swaps)
       .where(and(eq(swaps.userId, userId), eq(swaps.idempotencyKey, key)));
+    // A definite rejection was refunded; retrying it under the same key
+    // would create a video that never counts against the allowance.
+    if (existing?.refunded && !existing.taskId)
+      throw new HttpError("That attempt didn't go through. Start it again.", 409);
     if (existing) return existing;
     const plan = await requirePlan(userId, tx);
     if (seconds > plan.remainingSeconds)

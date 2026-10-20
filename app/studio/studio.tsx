@@ -18,12 +18,14 @@ import {
 } from "../../lib/options";
 import {
   swapApi,
+  SwapError,
   uploadMedia,
   type PlanStatus,
   type Swap,
   type UploadedMedia,
 } from "../../lib/swap-client";
 import { SubscribeButton } from "../billing-buttons";
+import { TaskTimer } from "./task-timer";
 import "../swap.css";
 
 type Mode = "swap" | "generate";
@@ -50,14 +52,6 @@ function statusLabel(status: string) {
       } as Record<string, string>
     )[status] ?? "In progress"
   );
-}
-function remaining(range?: { low: number; high: number } | null) {
-  if (!range || range.high <= 0) return null;
-  const low = Math.max(1, Math.ceil(range.low / 60)),
-    high = Math.max(low, Math.ceil(range.high / 60));
-  return low === high
-    ? `About ${high} min left`
-    : `About ${low}–${high} min left`;
 }
 function localDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -123,8 +117,13 @@ export function Studio({
     setError("");
   }, [mode, character, clip, references, length, ratio, prompt]);
   useEffect(() => {
+    // Loading the list also settles videos that ended while away, which
+    // can return seconds, so refresh the allowance after it.
     void swapApi<{ swaps: Swap[] }>("swaps")
-      .then((d) => setItems(d.swaps))
+      .then((d) => {
+        setItems(d.swaps);
+        if (d.swaps.some((s) => s.refunded)) void refreshPlan();
+      })
       .catch(() => {});
   }, []);
   // Right after checkout the webhook may land a moment later; poll briefly.
@@ -145,13 +144,18 @@ export function Studio({
     return () => clearInterval(timer);
   }, [subscribed, plan.active]);
 
-  // Check unfinished videos, backing off while the tab is hidden.
+  // Check unfinished videos, backing off while the tab is hidden. A failed
+  // check is retried on the next tick; coming back to the tab or back
+  // online checks right away.
   useEffect(() => {
     let stopped = false,
+      running = false,
       timer: ReturnType<typeof setTimeout>;
     async function check() {
+      clearTimeout(timer);
       const pending = itemsRef.current.filter((s) => !terminal(s.status));
-      if (stopped || !pending.length) return;
+      if (stopped || running || !pending.length) return;
+      running = true;
       await Promise.allSettled(
         pending.map(async (job) => {
           const fresh = await swapApi<Swap>(`swaps/${job.id}`);
@@ -160,16 +164,24 @@ export function Studio({
           if (fresh.refunded && !job.refunded) void refreshPlan();
         }),
       );
+      running = false;
       if (!stopped)
         timer = setTimeout(
           () => void check(),
           document.visibilityState === "hidden" ? 60000 : 10000,
         );
     }
+    const resume = () => {
+      if (document.visibilityState === "visible") void check();
+    };
     void check();
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("online", resume);
     return () => {
       stopped = true;
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("online", resume);
     };
   }, [items.length]);
 
@@ -306,6 +318,12 @@ export function Studio({
         80,
       );
     } catch (err) {
+      // A definite rejection gets a fresh key so the next try is a new
+      // request. A lost connection or server error keeps the key: the
+      // first attempt may have gone through, and a retry with the same key
+      // returns that video instead of starting a second one.
+      if (err instanceof SwapError && err.status > 0 && err.status < 500)
+        setPrepared((p) => p && { ...p, key: crypto.randomUUID() });
       setError(
         err instanceof Error ? err.message : "Could not start. Try again.",
       );
@@ -614,12 +632,9 @@ export function Studio({
           {items.length ? (
             <div className="swaps-grid">
               {items.map((s) => {
-                const eta = remaining(
-                  s.estimate?.stale ? null : s.estimate?.remainingSeconds,
-                );
                 const detail =
-                  s.status === "queued" && s.queue
-                    ? `Waiting to start · #${s.queue.position} in line`
+                  s.status === "queued"
+                    ? "Your video is in line and will start automatically."
                     : s.progress?.message ||
                       s.message ||
                       (s.status === "succeeded"
@@ -651,6 +666,7 @@ export function Studio({
                         <span>
                           {statusLabel(s.status)}
                           {!terminal(s.status) &&
+                          s.status !== "queued" &&
                           typeof s.progress?.percent === "number"
                             ? ` · ${s.progress.percent}%`
                             : ""}
@@ -675,9 +691,7 @@ export function Studio({
                         </span>
                       </div>
                       <p>{detail}</p>
-                      {eta && !terminal(s.status) && (
-                        <span className="task-eta">{eta}</span>
-                      )}
+                      {!terminal(s.status) && <TaskTimer task={s} />}
                       {s.refunded && (
                         <span className="task-wait-note">
                           {seconds(s.seconds)} returned to your allowance.

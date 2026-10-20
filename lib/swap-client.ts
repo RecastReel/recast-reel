@@ -4,7 +4,7 @@ export type PlanStatus = { billing: boolean; active: boolean; cancelAtPeriodEnd:
 export type Swap = {
  id: string; kind: 'swap' | 'generate'; status: string; prompt: string; seconds: number; refunded: boolean; createdAt: string; expiresAt?: string;
  message?: string; progress?: { message?: string; stage?: string; percent?: number }; queue?: { position: number };
- estimate?: { stale?: boolean; remainingSeconds?: { low: number; high: number } | null };
+ estimate?: { stale?: boolean; updatedAt?: string; remainingSeconds?: { low: number; high: number } | null; completionAt?: { earliest: string; latest: string } | null };
  outputs: { mime: string; url: string }[];
 };
 export type UploadedMedia = { url: string; seconds: number; token: string };
@@ -12,11 +12,18 @@ export type UploadedMedia = { url: string; seconds: number; token: string };
 export class SwapError extends Error { constructor(message: string, public status: number) { super(message); } }
 
 export async function swapApi<T>(path: string, body?: unknown, options: { idempotency?: string; signal?: AbortSignal } = {}): Promise<T> {
- const response = await fetch('/api/swap/' + path, {
-  method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: options.signal,
-  headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(options.idempotency ? { 'Idempotency-Key': options.idempotency } : {}) },
-  body: body === undefined ? undefined : JSON.stringify(body),
- });
+ let response: Response;
+ try {
+  response = await fetch('/api/swap/' + path, {
+   method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: options.signal,
+   headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(options.idempotency ? { 'Idempotency-Key': options.idempotency } : {}) },
+   body: body === undefined ? undefined : JSON.stringify(body),
+  });
+ } catch (error) {
+  if (options.signal?.aborted) throw error;
+  // Status 0: the request may or may not have reached the server.
+  throw new SwapError('Connection lost. Check your internet and try again.', 0);
+ }
  const data = await response.json().catch(() => ({ message: 'Unexpected response from the server.' }));
  if (!response.ok) throw new SwapError(data.message || 'The request failed.', response.status);
  return data as T;
