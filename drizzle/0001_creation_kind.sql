@@ -1,0 +1,1 @@
+ALTER TABLE "swaps" ADD COLUMN "kind" text DEFAULT 'swap' NOT NULL;
