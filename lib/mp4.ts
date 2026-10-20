@@ -1,5 +1,5 @@
 /** Duration in seconds from an MP4/MOV `moov/mvhd` box, or null if absent.
- * The server measures uploads itself so the allowance can't be under-reported. */
+ * The server measures uploads itself so a swap's length can't be under-reported. */
 export function mp4Duration(bytes: Uint8Array): number | null {
  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
  const type = (at: number) => String.fromCharCode(bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]);

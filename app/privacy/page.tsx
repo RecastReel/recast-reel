@@ -13,13 +13,13 @@ export default function Privacy() {
    <ul>
     <li><strong>Your email address</strong>, to send sign-in links and run your account. We don’t ask for your name or a password.</li>
     <li><strong>What you upload and create</strong>: videos, character and reference images, prompts, and the videos we make for you.</li>
-    <li><strong>Usage records</strong>: which videos you created, their length and status, so we can track your monthly allowance and return seconds for failed videos.</li>
+    <li><strong>Usage records</strong>: which videos you created, their length, cost and status, so we can track your monthly credit and return it for failed videos.</li>
     <li><strong>Subscription details</strong> from our payment provider: whether your plan is active and its billing dates. We never see or store your full card details.</li>
     <li><strong>Basic technical data</strong> such as IP address and browser type, used to keep sessions secure and stop abuse.</li>
    </ul>
 
    <h2>How we use it</h2>
-   <p>Only to provide Recast Reel: signing you in, creating your videos, enforcing your allowance, billing, preventing abuse, and contacting you about your account. We don’t sell your data, show ads, or use your uploads or videos to train AI models.</p>
+   <p>Only to provide Recast Reel: signing you in, creating your videos, enforcing your monthly credit, billing, preventing abuse, and contacting you about your account. We don’t sell your data, show ads, or use your uploads or videos to train AI models.</p>
 
    <h2>Who processes it for us</h2>
    <ul>

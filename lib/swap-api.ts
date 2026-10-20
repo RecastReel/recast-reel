@@ -5,7 +5,6 @@ import {
   cueJson,
   HttpError,
   mediaToken,
-  platformKey,
   safeUploadUrl,
   upstream,
   uploadedVideoSeconds,
@@ -13,7 +12,7 @@ import {
 } from "./cue";
 import { getDb } from "./db";
 import { swaps } from "./db/schema";
-import { GENERATE_RATIOS, GENERATE_SECONDS, MAX_REFERENCES } from "./options";
+import { GENERATE_RATIOS, GENERATE_SECONDS, MAX_REFERENCES, usd } from "./options";
 import { MAX_SWAP_SECONDS, MIN_SWAP_SECONDS, planStatus } from "./plan";
 import { sessionFor } from "./session";
 
@@ -82,6 +81,7 @@ function publicSwap(row: typeof swaps.$inferSelect) {
     status: row.status,
     prompt: row.prompt,
     seconds: row.seconds,
+    costCents: row.costCents,
     refunded: row.refunded,
     createdAt: row.createdAt.toISOString(),
     progress: task.progress,
@@ -97,13 +97,13 @@ function publicSwap(row: typeof swaps.$inferSelect) {
 }
 
 /** Pull the latest task state; a swap that ends without a result stops
- * counting against the allowance. */
+ * counting against the credit. */
 async function refresh(row: typeof swaps.$inferSelect) {
   if (TERMINAL.includes(row.status)) return row;
   const db = await getDb();
   if (!row.taskId) {
     // Never reached MadeByCue (its answer was lost and nobody retried):
-    // after a while, stop holding the seconds.
+    // after a while, stop holding its cost.
     if (Date.now() - row.createdAt.getTime() < 15 * 60 * 1000) return row;
     const [failed] = await db
       .update(swaps)
@@ -117,7 +117,7 @@ async function refresh(row: typeof swaps.$inferSelect) {
     task = await (await upstream(`/api/v1/tasks/${row.taskId}`)).json();
   } catch (error) {
     // MadeByCue deletes tasks after 7 days; one that never finished is
-    // over, and its hold was released, so return the seconds.
+    // over, and its hold was released, so return its cost.
     if (!(error instanceof HttpError && error.status === 404)) throw error;
     task = { ...(row.task ?? {}), status: "expired" };
   }
@@ -127,6 +127,7 @@ async function refresh(row: typeof swaps.$inferSelect) {
     .set({
       status,
       task,
+      costCents: costCents(status, task.cost, row.costCents),
       refunded: REFUNDABLE.includes(status) ? true : row.refunded,
       updatedAt: new Date(),
     })
@@ -135,8 +136,35 @@ async function refresh(row: typeof swaps.$inferSelect) {
   return updated ?? row;
 }
 
-/** Turn a request into the MadeByCue task and the allowance it uses. Only
- * signed media from this user is accepted. */
+const toCents = (usd: unknown) =>
+  typeof usd === "number" && Number.isFinite(usd) ? Math.ceil(usd * 100 - 1e-6) : null;
+
+/** What a task counts against the credit: what MadeByCue charged once it has
+ * settled, and until then the larger of our estimate and the charge so far. */
+function costCents(status: string, cost: unknown, reserved: number) {
+  const { charged, held } = (cost ?? {}) as { charged?: unknown; held?: unknown };
+  const cents = toCents(charged);
+  if (cents === null) return reserved;
+  const settled = TERMINAL.includes(status) && !held;
+  return settled ? cents : Math.max(reserved, cents);
+}
+
+/** MadeByCue's price for a task, in cents. Estimating is free and starts
+ * nothing. */
+async function estimateCents(estimate: Record<string, unknown>) {
+  const result = await cueJson<{
+    cost?: { estimated?: number | null };
+    initial_hold?: { amount?: number };
+  }>("/api/v1/estimate", estimate);
+  const cents =
+    toCents(result.cost?.estimated) ?? toCents(result.initial_hold?.amount);
+  if (cents === null)
+    throw new HttpError("Couldn't price this video. Try again shortly.", 502);
+  return cents;
+}
+
+/** Turn a request into the MadeByCue task, plus the body that prices it.
+ * Only signed media from this user is accepted. */
 export function buildRequest(userId: string, input: Record<string, unknown>) {
   const text =
     typeof input.prompt === "string" ? input.prompt.trim().slice(0, 1600) : "";
@@ -158,19 +186,21 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
       !references.every((ref) => verifyMedia(userId, ref?.url, 0, ref?.token))
     )
       throw new HttpError("Upload the reference images again.");
+    const task = {
+      model: "minimax-h3",
+      prompt: text,
+      duration_seconds: seconds,
+      aspect_ratio: ratio,
+      resolution: "768p",
+      audio: "generate",
+      reference_images: references.map((ref) => ref.url),
+    };
     return {
       kind: "generate" as const,
       seconds,
       prompt: text,
-      task: {
-        model: "minimax-h3",
-        prompt: text,
-        duration_seconds: seconds,
-        aspect_ratio: ratio,
-        resolution: "768p",
-        audio: "generate",
-        reference_images: references.map((ref) => ref.url),
-      },
+      task,
+      estimate: task,
     };
   }
   const video = input.video as Record<string, unknown> | undefined;
@@ -183,16 +213,20 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
     text.length >= 3
       ? text
       : "Replace the main character with the character in the reference image. Preserve the source scene and movement.";
+  const seconds = Math.ceil(Number(video.seconds));
+  const task = {
+    model: "swap",
+    source_video: video.url,
+    reference_images: [character.url],
+    prompt,
+  };
   return {
     kind: "swap" as const,
-    seconds: Math.ceil(Number(video.seconds)),
+    seconds,
     prompt,
-    task: {
-      model: "swap",
-      source_video: video.url,
-      reference_images: [character.url],
-      prompt,
-    },
+    task,
+    // Only the estimate endpoint takes the source length.
+    estimate: { ...task, source_duration_seconds: seconds },
   };
 }
 
@@ -205,10 +239,11 @@ async function createSwap(req: NextRequest, userId: string) {
     seconds,
     prompt,
     task: request,
+    estimate,
   } = buildRequest(userId, await body(req));
-  platformKey(); // fail before reserving seconds if video creation isn't configured
+  const cents = await estimateCents(estimate);
   const db = await getDb();
-  // Serialize reservations per user so two tabs can't overspend the allowance.
+  // Serialize reservations per user so two tabs can't overspend the credit.
   const reserved = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
     const [existing] = await tx
@@ -216,14 +251,14 @@ async function createSwap(req: NextRequest, userId: string) {
       .from(swaps)
       .where(and(eq(swaps.userId, userId), eq(swaps.idempotencyKey, key)));
     // A definite rejection was refunded; retrying it under the same key
-    // would create a video that never counts against the allowance.
+    // would create a video that never counts against the credit.
     if (existing?.refunded && !existing.taskId)
       throw new HttpError("That attempt didn't go through. Start it again.", 409);
     if (existing) return existing;
     const plan = await requirePlan(userId, tx);
-    if (seconds > plan.remainingSeconds)
+    if (cents > plan.remainingCents)
       throw new HttpError(
-        `This video needs ${seconds} seconds and you have ${plan.remainingSeconds} left this month.`,
+        `This video costs ${usd(cents)} and you have ${usd(plan.remainingCents)} of credit left this month.`,
         402,
       );
     const [row] = await tx
@@ -235,6 +270,7 @@ async function createSwap(req: NextRequest, userId: string) {
         idempotencyKey: key,
         prompt,
         seconds,
+        costCents: cents,
       })
       .returning();
     return row!;
@@ -296,6 +332,11 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
     }
     if (path === "swaps" && req.method === "POST")
       return json(publicSwap(await createSwap(req, user.id)), 201);
+    if (path === "swaps/estimate" && req.method === "POST") {
+      await requirePlan(user.id);
+      const { estimate } = buildRequest(user.id, await body(req));
+      return json({ costCents: await estimateCents(estimate) });
+    }
 
     const match = path.match(
       /^swaps\/([0-9a-f-]{36})(?:\/outputs\/(\d{1,2}))?$/,

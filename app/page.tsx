@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { FAQ, SHOWCASE } from '../lib/catalog';
+import { CENTS_PER_SECOND, usd } from '../lib/options';
 import { PLAN } from '../lib/plan';
 import { currentSession } from '../lib/session';
 import { ShowcaseCard } from './showcase';
@@ -45,12 +46,12 @@ export default async function Landing() {
      <h2 id="pricing-title">One simple plan</h2>
      <div className="price-card">
       <div className="price"><strong>${PLAN.priceUsd}</strong><span>/month</span></div>
-      <p className="price-lead">{PLAN.seconds} seconds of video generation every month.</p>
+      <p className="price-lead">{usd(PLAN.creditCents)} of video credit every month, about {Math.floor(PLAN.creditCents / CENTS_PER_SECOND.generate)} seconds of generated video or {Math.floor(PLAN.creditCents / CENTS_PER_SECOND.swap)} seconds of character swaps.</p>
       <ul>
        <li>Generate 5–15 second videos, with or without reference images</li>
        <li>Swap characters into your own 1–10 minute videos</li>
        <li>Use any character image you upload</li>
-       <li>Videos that fail give their seconds back</li>
+       <li>Videos that fail give their credit back</li>
        <li>Download finished videos for 7 days</li>
        <li>Cancel anytime</li>
       </ul>

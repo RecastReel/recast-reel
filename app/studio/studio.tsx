@@ -15,6 +15,7 @@ import {
   GENERATE_RATIOS,
   GENERATE_SECONDS,
   MAX_REFERENCES,
+  usd,
 } from "../../lib/options";
 import {
   swapApi,
@@ -30,7 +31,7 @@ import "../swap.css";
 
 type Mode = "swap" | "generate";
 type Pick = { id: string; name: string; url: string; file?: File };
-type Prepared = { body: Record<string, unknown>; seconds: number; key: string };
+type Prepared = { body: Record<string, unknown>; costCents: number; key: string };
 
 const MIN_SECONDS = 60,
   MAX_SECONDS = 600;
@@ -93,7 +94,7 @@ export function Studio({
   subscribed: boolean;
 }) {
   const [plan, setPlan] = useState(initialPlan);
-  const [mode, setMode] = useState<Mode>("generate");
+  const [mode, setMode] = useState<Mode>("swap");
   const [character, setCharacter] = useState<Pick | null>(null);
   const [clip, setClip] = useState<(Pick & { seconds: number }) | null>(null);
   const [references, setReferences] = useState<Pick[]>([]);
@@ -118,7 +119,7 @@ export function Studio({
   }, [mode, character, clip, references, length, ratio, prompt]);
   useEffect(() => {
     // Loading the list also settles videos that ended while away, which
-    // can return seconds, so refresh the allowance after it.
+    // can return credit, so refresh the plan after it.
     void swapApi<{ swaps: Swap[] }>("swaps")
       .then((d) => {
         setItems(d.swaps);
@@ -249,15 +250,10 @@ export function Studio({
 
   async function prepare() {
     if (busy) return;
-    const needed = mode === "swap" ? (clip?.seconds ?? 0) : length;
     if (mode === "swap" && (!character || !clip))
       return setError("Pick a character and add a video first.");
     if (mode === "generate" && prompt.trim().length < 3)
       return setError("Describe the video you want to create.");
-    if (needed > plan.remainingSeconds)
-      return setError(
-        `This needs ${seconds(needed)} and you have ${seconds(plan.remainingSeconds)} left this month.`,
-      );
     setBusy(true);
     setError("");
     setProgress("Uploading…");
@@ -279,12 +275,16 @@ export function Studio({
                 references.map((r) => upload(r, "image")),
               ),
             };
-      setPrepared({
+      setProgress("Pricing…");
+      const { costCents } = await swapApi<{ costCents: number }>(
+        "swaps/estimate",
         body,
-        seconds:
-          mode === "swap" ? (body.video as UploadedMedia).seconds : length,
-        key: crypto.randomUUID(),
-      });
+      );
+      if (costCents > plan.remainingCents)
+        return setError(
+          `This video costs ${usd(costCents)} and you have ${usd(plan.remainingCents)} of credit left this month.`,
+        );
+      setPrepared({ body, costCents, key: crypto.randomUUID() });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Upload failed. Try again.",
@@ -339,31 +339,18 @@ export function Studio({
         <div className="creation-stage">
           <section className="swap-intro">
             <h1>What are you making today?</h1>
-            <p>
-              {!plan.billing ? (
-                "Generate a new video or swap a character into yours. Running locally: videos are charged to your MadeByCue API key."
-              ) : plan.active ? (
-                <>
-                  Generate a new video or swap a character into yours.{" "}
-                  <strong>{seconds(plan.remainingSeconds)}</strong> of video
-                  left this month.
-                </>
-              ) : (
-                "Subscribe to start generating videos and swapping characters."
-              )}
-            </p>
           </section>
           <section className="composer-stage" aria-label="Composer">
             {!plan.active ? (
               <div className="paywall">
                 <strong>
-                  ${price}/month · {plan.allowanceSeconds} seconds of video
-                  generation every month
+                  ${price}/month · {usd(plan.creditCents)} of video credit
+                  every month
                 </strong>
                 <p>
                   {subscribed
                     ? "Confirming your subscription… this takes a few seconds."
-                    : "Videos that fail give their seconds back. Cancel anytime."}
+                    : "Videos that fail give their credit back. Cancel anytime."}
                 </p>
                 {!subscribed && (
                   <SubscribeButton label="Subscribe to start" />
@@ -378,19 +365,19 @@ export function Studio({
                 >
                   <button
                     role="tab"
-                    aria-selected={mode === "generate"}
-                    aria-pressed={mode === "generate"}
-                    onClick={() => setMode("generate")}
-                  >
-                    Generate video
-                  </button>
-                  <button
-                    role="tab"
                     aria-selected={mode === "swap"}
                     aria-pressed={mode === "swap"}
                     onClick={() => setMode("swap")}
                   >
                     Swap character
+                  </button>
+                  <button
+                    role="tab"
+                    aria-selected={mode === "generate"}
+                    aria-pressed={mode === "generate"}
+                    onClick={() => setMode("generate")}
+                  >
+                    Generate video
                   </button>
                 </div>
                 <div className="composer">
@@ -493,6 +480,17 @@ export function Studio({
                     }
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enter reviews, Enter again starts; Shift+Enter adds a line.
+                      if (
+                        e.key !== "Enter" ||
+                        e.shiftKey ||
+                        e.nativeEvent.isComposing
+                      )
+                        return;
+                      e.preventDefault();
+                      void (prepared ? confirm() : prepare());
+                    }}
                     maxLength={1600}
                     placeholder={
                       mode === "swap"
@@ -562,14 +560,14 @@ export function Studio({
                       <p>
                         {plan.billing ? (
                           <>
-                            This uses {seconds(prepared.seconds)} of your{" "}
-                            {seconds(plan.remainingSeconds)} left. If it fails,
-                            the seconds come back.
+                            This costs about {usd(prepared.costCents)} of your{" "}
+                            {usd(plan.remainingCents)} credit left. If it fails,
+                            the credit comes back.
                           </>
                         ) : (
                           <>
-                            This makes {seconds(prepared.seconds)} of video on
-                            your MadeByCue API key.
+                            This costs about {usd(prepared.costCents)} on your
+                            MadeByCue API key.
                           </>
                         )}
                       </p>
@@ -694,7 +692,7 @@ export function Studio({
                       {!terminal(s.status) && <TaskTimer task={s} />}
                       {s.refunded && (
                         <span className="task-wait-note">
-                          {seconds(s.seconds)} returned to your allowance.
+                          {usd(s.costCents)} returned to your credit.
                         </span>
                       )}
                       <div className="task-actions">

@@ -73,7 +73,7 @@ export function TaskTimer({ task }: { task: Swap }) {
       <p className="task-timer-note">
         {task.kind === "swap"
           ? "Character swaps often take 30–40 minutes."
-          : "Videos can take up to 30–40 minutes when we're busy."}{" "}
+          : "Generated videos usually take 5–6 minutes."}{" "}
         We&apos;re still working on it. You can close this page; your video
         will be here when you come back.
       </p>

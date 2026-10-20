@@ -64,8 +64,8 @@ export const user_fs_entitlement = pgTable('user_fs_entitlement', {
  createdAt: timestamp('created_at').notNull(),
 }, (t) => [index('user_fs_entitlement_user_idx').on(t.userId)]);
 
-/** One row per creation: a character swap or a generated video. `seconds`
- * is the allowance it uses; one that fails is refunded and stops counting. */
+/** One row per creation: a character swap or a generated video. `costCents`
+ * is the credit it uses; one that fails is refunded and stops counting. */
 export const swaps = pgTable('swaps', {
  id: text('id').primaryKey(),
  kind: text('kind').$type<'swap' | 'generate'>().notNull().default('swap'),
@@ -74,6 +74,8 @@ export const swaps = pgTable('swaps', {
  idempotencyKey: text('idempotency_key').notNull(),
  prompt: text('prompt').notNull(),
  seconds: integer('seconds').notNull(),
+ /** MadeByCue's price in US cents: the estimate until the task settles, then what it charged. */
+ costCents: integer('cost_cents').notNull().default(0),
  status: text('status').notNull().default('queued'),
  refunded: boolean('refunded').notNull().default(false),
  task: jsonb('task').$type<Record<string, unknown>>(),

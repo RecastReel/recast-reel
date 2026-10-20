@@ -67,6 +67,8 @@
 .swaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
 .task-card { min-width: 0; overflow: hidden; border: 1px solid #363636; border-radius: 17px; background: #232323; }
 .task-preview { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #191919; }
+.task-preview:fullscreen { width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; background: #000; }
+.task-preview:-webkit-full-screen { width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; background: #000; }
 .task-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #b4cbe2; font-size: 12px; }
 .task-placeholder.is-terminal { color: #a6a6a6; }
 .task-copy { padding: 13px; }

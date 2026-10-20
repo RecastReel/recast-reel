@@ -9,7 +9,7 @@ Premium features are gated by `requirePlan()` in `lib/swap-api.ts`, which return
 
 | Premium feature | Entry point | Gated by |
 | --- | --- | --- |
-| Generate a video / swap a character | `POST /api/swap/swaps` | `requirePlan` + monthly seconds allowance |
+| Generate a video / swap a character | `POST /api/swap/swaps` | `requirePlan` + monthly USD credit (MadeByCue's estimate, then its charge) |
 | Upload media for a creation | `POST /api/swap/uploads` | `requirePlan` |
 
 Local mode (`npm run dev` without `LOCAL_MODE=0`) has billing off; `planStatus()`
@@ -33,7 +33,7 @@ All Freemius SDK calls are server-side; the keys come from env only.
 | --- | --- |
 | SDK client, sandbox flag, checkout link, license sync, portal link | `lib/freemius.ts` |
 | Checkout/portal/redirect/webhook handlers | `lib/billing-api.ts` (routes in `app/api/billing/*`, `app/api/webhooks/freemius`) |
-| Entitlement resolve + allowance | `lib/plan.ts` (`planStatus`) |
+| Entitlement resolve + credit balance | `lib/plan.ts` (`planStatus`) |
 | Paywall guard (402) | `lib/swap-api.ts` (`requirePlan`) |
 | Entitlement mirror table | `lib/db/schema.ts` (`user_fs_entitlement`) |
 
