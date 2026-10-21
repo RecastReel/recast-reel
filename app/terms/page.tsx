@@ -30,9 +30,9 @@ export default function Terms() {
    <p>You confirm that you have all the rights and permissions needed for what you upload. That includes the consent of any real person who appears in it or whose likeness you use.</p>
 
    <h2>4. Acceptable use</h2>
-   <p>You may not use Recast Reel to create or share content that:</p>
+   <p>You can use Recast Reel to make videos for demos and creative projects, as long as they aren’t used to deceive anyone. You may not use Recast Reel to create or share content that:</p>
    <ul>
-    <li>puts a real person’s face or likeness into a video without their consent, or impersonates someone to deceive others;</li>
+    <li>puts a real person’s face or likeness into a video without their consent, or is used to deceive others;</li>
     <li>is sexual or intimate content of a real person, or any sexual content involving minors;</li>
     <li>harasses, threatens, defames or bullies anyone;</li>
     <li>is used for fraud, scams, election or political disinformation, or to pass AI video off as real footage in order to mislead;</li>
