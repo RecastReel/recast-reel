@@ -37,7 +37,7 @@ export default async function Landing() {
      <h2 id="how-title">How it works</h2>
      <ol className="steps">
       <li><strong>Generate a video</strong><span>Describe a 5, 10 or 15 second scene. Add up to four reference images, like a character or product, or none at all.</span></li>
-      <li><strong>Or swap a character</strong><span>Upload a 1–10 minute MP4 or MOV and pick a character. The motion, camera and lighting stay.</span></li>
+      <li><strong>Or swap a character</strong><span>Upload a 40 second to 10 minute MP4 or MOV and pick a character. The motion, camera and lighting stay.</span></li>
       <li><strong>Download it</strong><span>Close the tab while it works; your video appears in your studio when it’s ready.</span></li>
      </ol>
     </section>
@@ -48,7 +48,7 @@ export default async function Landing() {
       <div className="price"><strong>${PLAN.priceUsd}</strong><span>/month</span></div>
       <p className="price-lead">{credits(PLAN.creditCents)} every month</p>
       <ul>
-       <li>Character swaps for any 1–10 minute video</li>
+       <li>Character swaps for any video from 40 seconds to 10 minutes</li>
        <li>Video generation</li>
        <li>Customer support</li>
       </ul>

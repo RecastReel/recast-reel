@@ -35,7 +35,7 @@ type Mode = "swap" | "generate";
 type Pick = { id: string; name: string; url: string; file?: File };
 type Prepared = { body: Record<string, unknown>; costCents: number; key: string };
 
-const MIN_SECONDS = 60,
+const MIN_SECONDS = 40,
   MAX_SECONDS = 600;
 const TERMINAL = ["succeeded", "failed", "needs_input", "cancelled", "expired"];
 const terminal = (status: string) => TERMINAL.includes(status);
@@ -221,8 +221,8 @@ export function Studio({
     try {
       const length = await localDuration(file);
       if (length < MIN_SECONDS - 0.5)
-        return setError("Choose a video at least 1 minute long.");
-      // Every swap source goes through the trimmer to pick its 1–10 minutes.
+        return setError("Choose a video at least 40 seconds long.");
+      // Every swap source goes through the trimmer to pick its 40 seconds to 10 minutes.
       setTrimming({ file, duration: length });
     } catch (err) {
       setError(
@@ -447,7 +447,7 @@ export function Studio({
                           <button
                             className="media-tile"
                             aria-label="Upload a video"
-                            title="Upload a 1–10 minute video"
+                            title="Upload a 40 second to 10 minute video"
                             onClick={() => videoInput.current?.click()}
                           >
                             {clip ? (

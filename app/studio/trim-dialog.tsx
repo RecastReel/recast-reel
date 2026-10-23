@@ -231,7 +231,7 @@ export function TrimDialog({
       <div className="clip-head">
         <h2 id="clip-title">Choose your clip</h2>
         <p id="clip-description">
-          Swaps use 1 to {maximum / 60} minutes of video. Drag the edges to
+          Swaps use 40 seconds to {maximum / 60} minutes of video. Drag the edges to
           trim; only your selected clip is uploaded.
         </p>
       </div>
@@ -364,7 +364,7 @@ export function TrimDialog({
             {timeLabel(start)} – {timeLabel(end)}
           </strong>
           <small>
-            {timeLabel(end - start)} selected · 1–{maximum / 60} min clip
+            {timeLabel(end - start)} selected · 40 sec–{maximum / 60} min clip
           </small>
         </span>
         <label>

@@ -11,8 +11,8 @@ export const PLAN = {
  priceUsd: 25,
  creditCents: Math.round(Number(process.env.MONTHLY_CREDIT_USD || 20) * 100),
 };
-// MadeByCue character swaps accept 60–600 second sources.
-export const MIN_SWAP_SECONDS = 60;
+// MadeByCue character swaps accept 40–600 second sources.
+export const MIN_SWAP_SECONDS = 40;
 export const MAX_SWAP_SECONDS = 600;
 
 export type PlanStatus = {

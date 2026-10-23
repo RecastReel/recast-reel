@@ -501,7 +501,7 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
         measured > MAX_SWAP_SECONDS + 0.5
       )
         throw new HttpError(
-          `Swaps need a video between ${MIN_SWAP_SECONDS / 60} and ${MAX_SWAP_SECONDS / 60} minutes long.`,
+          `Swaps need a video between ${MIN_SWAP_SECONDS} seconds and ${MAX_SWAP_SECONDS / 60} minutes long.`,
           422,
         );
       const seconds = Math.min(
