@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   Plus,
   RefreshCw,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -190,6 +191,19 @@ export function Studio({
       window.removeEventListener("online", resume);
     };
   }, [items.length]);
+
+  async function remove(s: Swap) {
+    if (!window.confirm("Delete this video? You won't be able to download it again."))
+      return;
+    try {
+      await swapApi(`swaps/${s.id}`, undefined, { method: "DELETE" });
+      setItems((list) => list.filter((item) => item.id !== s.id));
+    } catch (cause) {
+      setError(
+        cause instanceof SwapError ? cause.message : "Couldn't delete the video.",
+      );
+    }
+  }
 
   async function refreshPlan() {
     try {
@@ -720,6 +734,16 @@ export function Studio({
                           <a href={`${s.outputs[0].url}?download=1`} download>
                             Download video
                           </a>
+                        )}
+                        {terminal(s.status) && (
+                          <button
+                            type="button"
+                            className="task-delete"
+                            onClick={() => void remove(s)}
+                          >
+                            <Trash2 size={12} />
+                            Delete
+                          </button>
                         )}
                       </div>
                     </div>

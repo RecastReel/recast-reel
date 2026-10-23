@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import {
   cueJson,
@@ -322,7 +322,7 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
       const rows = await db
         .select()
         .from(swaps)
-        .where(eq(swaps.userId, user.id))
+        .where(and(eq(swaps.userId, user.id), isNull(swaps.deletedAt)))
         .orderBy(desc(swaps.createdAt))
         .limit(50);
       const fresh = await Promise.all(
@@ -341,11 +341,36 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
     const match = path.match(
       /^swaps\/([0-9a-f-]{36})(?:\/outputs\/(\d{1,2}))?$/,
     );
+    // Deleting hides a finished video and blocks its output URLs. MadeByCue
+    // removes the files itself after 7 days; the cost keeps counting.
+    if (match && !match[2] && req.method === "DELETE") {
+      const [row] = await db
+        .update(swaps)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .where(
+          and(
+            eq(swaps.id, match[1]),
+            eq(swaps.userId, user.id),
+            isNull(swaps.deletedAt),
+            inArray(swaps.status, TERMINAL),
+          ),
+        )
+        .returning({ id: swaps.id });
+      if (!row)
+        throw new HttpError("Only finished videos can be deleted.", 404);
+      return json({ deleted: true });
+    }
     if (match && req.method === "GET") {
       const [row] = await db
         .select()
         .from(swaps)
-        .where(and(eq(swaps.id, match[1]), eq(swaps.userId, user.id)));
+        .where(
+          and(
+            eq(swaps.id, match[1]),
+            eq(swaps.userId, user.id),
+            isNull(swaps.deletedAt),
+          ),
+        );
       if (!row) throw new HttpError("Swap not found.", 404);
       if (!match[2]) return json(publicSwap(await refresh(row)));
       if (!row.taskId) throw new HttpError("This swap has no result yet.", 404);

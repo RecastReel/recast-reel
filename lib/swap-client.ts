@@ -11,11 +11,11 @@ export type UploadedMedia = { url: string; seconds: number; token: string };
 
 export class SwapError extends Error { constructor(message: string, public status: number) { super(message); } }
 
-export async function swapApi<T>(path: string, body?: unknown, options: { idempotency?: string; signal?: AbortSignal } = {}): Promise<T> {
+export async function swapApi<T>(path: string, body?: unknown, options: { idempotency?: string; signal?: AbortSignal; method?: 'DELETE' } = {}): Promise<T> {
  let response: Response;
  try {
   response = await fetch('/api/swap/' + path, {
-   method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: options.signal,
+   method: options.method ?? (body === undefined ? 'GET' : 'POST'), cache: 'no-store', signal: options.signal,
    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(options.idempotency ? { 'Idempotency-Key': options.idempotency } : {}) },
    body: body === undefined ? undefined : JSON.stringify(body),
   });

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "freemius-checkout": {
+      "source": "freemius/freemius-ai",
+      "sourceType": "github",
+      "skillPath": "skills/freemius-checkout/SKILL.md",
+      "computedHash": "69ba64cd94fa7312e629dd551f4ecd7929bdc8c2404dfc066fa6d1ddd3352645"
+    },
+    "freemius-core": {
+      "source": "freemius/freemius-ai",
+      "sourceType": "github",
+      "skillPath": "skills/freemius-core/SKILL.md",
+      "computedHash": "fc1b8b15c1c4705baafdb73c9721776ea7728ee37367a5e6a89dee14b3ade946"
+    },
+    "freemius-customer-portal": {
+      "source": "freemius/freemius-ai",
+      "sourceType": "github",
+      "skillPath": "skills/freemius-customer-portal/SKILL.md",
+      "computedHash": "b965a2fa4f4793f5dacab19ed5a55bd02fd20d292656c0c94aeb5b8d779c3cad"
+    },
+    "freemius-troubleshooting": {
+      "source": "freemius/freemius-ai",
+      "sourceType": "github",
+      "skillPath": "skills/freemius-troubleshooting/SKILL.md",
+      "computedHash": "f39cbbff7912aaa84d5e9b1ee42465bdcc17ce3ee07fc0a5a42a38c330adfce3"
+    }
+  }
+}

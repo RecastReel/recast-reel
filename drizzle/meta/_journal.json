@@ -36,6 +36,13 @@
       "when": 1792523576331,
       "tag": "0004_usd_credit",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792613369030,
+      "tag": "0005_delete_video",
+      "breakpoints": true
     }
   ]
 }

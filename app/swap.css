@@ -93,6 +93,8 @@
 .task-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; }
 .task-actions a, .task-actions button { display: inline-flex; align-items: center; gap: 6px; padding: 0; color: #c5c5c5; font-size: 11px; }
 .task-actions a:hover, .task-actions button:hover { color: #fff; }
+.task-actions .task-delete { margin-left: auto; color: #8f8f8f; }
+.task-actions .task-delete:hover { color: #ff8a80; }
 .gallery-empty { display: flex; flex-direction: column; gap: 6px; padding: 24px; border: 1px solid #303030; border-radius: 16px; background: #1d1d1d; text-align: center; }
 .gallery-empty strong { color: #ddd; font-size: 13px; font-weight: 400; }
 .gallery-empty span { color: #929292; font-size: 11px; line-height: 1.5; }

@@ -78,6 +78,8 @@ export const swaps = pgTable('swaps', {
  costCents: integer('cost_cents').notNull().default(0),
  status: text('status').notNull().default('queued'),
  refunded: boolean('refunded').notNull().default(false),
+ /** Removed from the studio by the user; still counts against the credit. */
+ deletedAt: timestamp('deleted_at'),
  task: jsonb('task').$type<Record<string, unknown>>(),
  createdAt: timestamp('created_at').notNull().defaultNow(),
  updatedAt: timestamp('updated_at').notNull().defaultNow(),
