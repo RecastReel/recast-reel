@@ -15,6 +15,7 @@ import { swaps } from "./db/schema";
 import { GENERATE_RATIOS, GENERATE_SECONDS, MAX_REFERENCES, credits } from "./options";
 import { MAX_SWAP_SECONDS, MIN_SWAP_SECONDS, planStatus } from "./plan";
 import { sessionFor } from "./session";
+import { readJsonBody as body } from "./request-body";
 
 const TERMINAL = ["succeeded", "failed", "needs_input", "cancelled", "expired"];
 const REFUNDABLE = ["failed", "needs_input", "cancelled", "expired"];
@@ -44,22 +45,14 @@ async function requirePlan(
   if (!plan.active) throw new HttpError("Subscribe to start swapping.", 402);
   return plan;
 }
-async function body(req: NextRequest, max = 64 * 1024) {
-  const raw = await req.text();
-  if (Buffer.byteLength(raw) > max)
-    throw new HttpError("Request is too large.", 413);
-  try {
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    throw new HttpError("Invalid request body.");
-  }
-}
-const uploadToken = (userId: string, key: string) =>
-  mediaToken(userId, `upload:${key}`);
+const uploadToken = (userId: string, key: string, mime: string) =>
+  mediaToken(userId, key, 0, `upload:${mime}`);
 function ownUpload(userId: string, input: Record<string, unknown>) {
   if (
     typeof input.key !== "string" ||
-    !verifyMedia(userId, `upload:${input.key}`, 0, input.token)
+    typeof input.mime !== "string" ||
+    ![...IMAGE_TYPES, ...VIDEO_TYPES].includes(input.mime) ||
+    !verifyMedia(userId, input.key, 0, input.token, `upload:${input.mime}`)
   )
     throw new HttpError("Upload not found. Start the upload again.", 404);
   return input.key;
@@ -183,7 +176,7 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
     if (references.length > MAX_REFERENCES)
       throw new HttpError(`Use up to ${MAX_REFERENCES} reference images.`);
     if (
-      !references.every((ref) => verifyMedia(userId, ref?.url, 0, ref?.token))
+      !references.every((ref) => verifyMedia(userId, ref?.url, 0, ref?.token, "image"))
     )
       throw new HttpError("Upload the reference images again.");
     const task = {
@@ -205,15 +198,21 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
   }
   const video = input.video as Record<string, unknown> | undefined;
   const character = input.character as Record<string, unknown> | undefined;
-  if (!video || !verifyMedia(userId, video.url, video.seconds, video.token))
+  if (!video || !verifyMedia(userId, video.url, video.seconds, video.token, "video"))
     throw new HttpError("Upload the source video again.");
-  if (!character || !verifyMedia(userId, character.url, 0, character.token))
+  if (!character || !verifyMedia(userId, character.url, 0, character.token, "image"))
     throw new HttpError("Upload the character image again.");
   const prompt =
     text.length >= 3
       ? text
       : "Replace the main character with the character in the reference image. Preserve the source scene and movement.";
-  const seconds = Math.ceil(Number(video.seconds));
+  if (
+    typeof video.seconds !== "number" ||
+    !Number.isInteger(video.seconds) ||
+    video.seconds < MIN_SWAP_SECONDS ||
+    video.seconds > MAX_SWAP_SECONDS
+  ) throw new HttpError("Upload a video between 40 seconds and 10 minutes long.");
+  const seconds = video.seconds;
   const task = {
     model: "swap",
     source_video: video.url,
@@ -439,7 +438,7 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
       return json(
         {
           key: reservation.key,
-          token: uploadToken(user.id, reservation.key),
+          token: uploadToken(user.id, reservation.key, mime),
           uploadUrl: reservation.uploadUrl
             ? safeUploadUrl(reservation.uploadUrl)
             : undefined,
@@ -489,11 +488,14 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
         "/api/media/confirm",
         { key: ownUpload(user.id, input) },
       );
-      if (input.kind !== "video")
+      const expectedKind = IMAGE_TYPES.includes(String(input.mime)) ? "image" : "video";
+      if (input.kind !== expectedKind || (confirmed.mime && confirmed.mime !== input.mime))
+        throw new HttpError("The uploaded media type does not match. Upload it again.", 422);
+      if (expectedKind === "image")
         return json({
           url: confirmed.url,
           seconds: 0,
-          token: mediaToken(user.id, confirmed.url),
+          token: mediaToken(user.id, confirmed.url, 0, "image"),
         });
       const measured = await uploadedVideoSeconds(confirmed.url);
       if (
@@ -511,7 +513,7 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
       return json({
         url: confirmed.url,
         seconds,
-        token: mediaToken(user.id, confirmed.url, seconds),
+        token: mediaToken(user.id, confirmed.url, seconds, "video"),
       });
     }
     throw new HttpError("Not found.", 404);

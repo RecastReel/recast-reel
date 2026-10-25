@@ -111,14 +111,16 @@ function sign(payload: string) {
   if (!secret) throw new HttpError("Server is not configured.", 503);
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
-export function mediaToken(userId: string, url: string, seconds = 0) {
-  return sign(`${userId}|${url}|${seconds}`);
+export type MediaPurpose = "image" | "video" | `upload:${string}`;
+export function mediaToken(userId: string, url: string, seconds: number, purpose: MediaPurpose) {
+  return sign(JSON.stringify([userId, url, seconds, purpose]));
 }
 export function verifyMedia(
   userId: string,
   url: unknown,
   seconds: unknown,
   token: unknown,
+  purpose: MediaPurpose,
 ) {
   if (
     typeof url !== "string" ||
@@ -127,7 +129,7 @@ export function verifyMedia(
   )
     return false;
   const a = Buffer.from(token),
-    b = Buffer.from(mediaToken(userId, url, seconds));
+    b = Buffer.from(mediaToken(userId, url, seconds, purpose));
   return a.length === b.length && timingSafeEqual(a, b);
 }
 

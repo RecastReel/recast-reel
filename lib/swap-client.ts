@@ -33,7 +33,7 @@ export async function swapApi<T>(path: string, body?: unknown, options: { idempo
 export async function uploadMedia(file: File, kind: 'image' | 'video', onProgress?: (fraction: number) => void): Promise<UploadedMedia> {
  type Reservation = { key: string; token: string; uploadUrl?: string; multipart?: { uploadId: string; partSize: number; partCount: number } };
  const reservation = await swapApi<Reservation>('uploads', { name: file.name, mime: file.type, size: file.size });
- const ids = { key: reservation.key, token: reservation.token };
+ const ids = { key: reservation.key, token: reservation.token, mime: file.type };
  try {
   if (reservation.multipart) {
    const { uploadId, partSize, partCount } = reservation.multipart;

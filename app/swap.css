@@ -210,3 +210,55 @@
 .swap .reference-tile .remove-attachment { top: -6px; }
 .generate-options { display: flex; flex-wrap: wrap; gap: 8px; }
 .task-kind { display: block; margin-bottom: 6px; color: #8fa9c4; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+
+/* Recognizable inputs and an editable starting direction. */
+.swap .character-upload, .swap .video-upload { width: 150px; height: 112px; border: 1px dashed #606975; background: #2a3038; border-radius: 13px; }
+.swap .video-upload { width: 200px; background: #2b2e33; }
+.swap .character-upload:hover, .swap .video-upload:hover { border-color: #b4cbe2; background: #343e4b; }
+.upload-cue { display: flex; align-items: center; flex-direction: column; gap: 7px; color: #c6d7e9; font-size: 12px; }
+.upload-cue small { color: #9ca5ae; font-size: 10px; }
+.media-label { font-size: 11px; color: #c2c5ca; }
+.prompt-hint { margin: 0 2px 10px; color: #9ca5ae; font-size: 11px; line-height: 1.6; }
+.composer textarea { min-height: 68px; height: 68px; }
+.composer textarea:focus-visible { outline: 1px solid #88acd0; outline-offset: 4px; border-radius: 3px; }
+.studio-example { padding: 22px; border: 1px solid #34383e; border-radius: 20px; background: #1d1f22; }
+.studio-example-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+.example-eyebrow { color: #acc9e8; font-size: 11px; }
+.studio-example h3 { font-size: 18px; font-weight: 400; margin: 7px 0; }
+.studio-example p { color: #a3a7ac; font-size: 12px; line-height: 1.6; margin: 0; }
+.swap .example-use { display: flex; align-items: center; gap: 8px; flex-shrink: 0; border: 1px solid #4c5663; background: #2c3541; color: #e0ebf7; border-radius: 20px; padding: 10px 14px; font-size: 12px; }
+.swap .example-use:hover { background: #3a4b60; }
+.example-media-flow { display: grid; grid-template-columns: 1fr 20px .75fr 20px 1fr; align-items: center; gap: 12px; }
+.example-media-flow figure { min-width: 0; margin: 0; }
+.example-media-flow figcaption { display: flex; gap: 6px; align-items: center; color: #b9bec5; font-size: 11px; margin-bottom: 9px; }
+.example-media-flow video, .example-media-flow img { display: block; width: 100%; height: 230px; object-fit: contain; border-radius: 10px; background: #101112; }
+.example-media-flow img { background: #fff; }
+.example-result figcaption { color: #b5d5f6; }
+.example-operator { color: #899bae; text-align: center; }
+@media (max-width: 600px) {
+ .swap .character-upload, .swap .video-upload { width: 132px; height: 105px; }
+ .studio-example { padding: 16px; }
+ .studio-example-heading { align-items: flex-start; flex-direction: column; }
+ .example-media-flow { grid-template-columns: 1fr 1fr; gap: 14px; }
+ .example-media-flow .example-operator { display: none; }
+ .example-media-flow .example-result { grid-column: 1 / -1; }
+ .example-media-flow video, .example-media-flow img { height: 190px; }
+ .example-media-flow .example-result video { height: 260px; }
+}
+
+.prompt-editor { position: relative; }
+.prompt-highlight { position: absolute; inset: 0; overflow: hidden; pointer-events: none; white-space: pre-wrap; overflow-wrap: break-word; color: #eee; }
+.composer .prompt-highlight, .composer .prompt-editor textarea { box-sizing: border-box; padding: 0 2px; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; letter-spacing: normal; tab-size: 8; }
+.prompt-highlight mark { color: #b9dbff; background: #35557580; border-radius: 4px; box-shadow: 0 0 0 1px #7caede30; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.composer .has-highlights textarea { position: relative; color: transparent; caret-color: #eee; }
+.composer .has-highlights textarea::selection { background: #6ca6e170; color: transparent; }
+@media (max-width: 600px) {
+ .composer .prompt-highlight, .composer .prompt-editor textarea { font-size: 13px; }
+}
+.composer .has-highlights textarea { height: 110px; min-height: 110px; }
+.swap .swap-go.is-ready { background: #d2e7ff; color: #182b40; box-shadow: 0 0 15px #8abafc24; }
+.swap .swap-go.is-ready:hover:not(:disabled) { background: #fff; }
+.swap .swap-go:disabled { cursor: not-allowed; opacity: .55; }
+.swap .composer-reset { display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 14px; padding: 6px 9px; background: transparent; color: #aab3bf; font-size: 11px; }
+.swap .composer-reset:hover:not(:disabled) { background: #343b44; color: #eee; }
+.swap .composer-reset:disabled { opacity: .5; }

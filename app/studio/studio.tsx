@@ -1,14 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
+  ArrowRight,
+  UserRound,
+  Film,
   CircleAlert,
   CircleCheck,
   LoaderCircle,
   Plus,
   RefreshCw,
+  RotateCcw,
   Trash2,
   X,
 } from "lucide-react";
@@ -34,6 +37,8 @@ import "../swap.css";
 type Mode = "swap" | "generate";
 type Pick = { id: string; name: string; url: string; file?: File };
 type Prepared = { body: Record<string, unknown>; costCents: number; key: string };
+
+const SWAP_PROMPT = "Swap [specify the character to replace, e.g. the man in a blue suit] in the video with [describe the person in your reference image]. Use the reference person’s clothing instead of the original character’s outfit, and match the original character’s motions.";
 
 const MIN_SECONDS = 40,
   MAX_SECONDS = 600;
@@ -106,7 +111,12 @@ export function Studio({
   const [references, setReferences] = useState<Pick[]>([]);
   const [length, setLength] = useState(GENERATE_SECONDS[0]);
   const [ratio, setRatio] = useState(GENERATE_RATIOS[0]);
-  const [prompt, setPrompt] = useState("");
+  const [swapPrompt, setSwapPrompt] = useState(SWAP_PROMPT);
+  const [generatePrompt, setGeneratePrompt] = useState("");
+  const prompt = mode === "swap" ? swapPrompt : generatePrompt;
+  const setPrompt = mode === "swap" ? setSwapPrompt : setGeneratePrompt;
+  const promptReady = prompt.trim().length >= 3 && !/\[[^\]]*\]/.test(prompt);
+  const ready = mode === "swap" ? Boolean(character && clip && promptReady) : promptReady;
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
@@ -117,6 +127,7 @@ export function Studio({
   const imageInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLElement>(null);
+  const promptHighlight = useRef<HTMLDivElement>(null);
   itemsRef.current = items;
 
   useEffect(() => {
@@ -263,8 +274,8 @@ export function Studio({
     let file = pick.file;
     if (!file) {
       const blob = await (await fetch(pick.url)).blob();
-      file = new File([blob], `${pick.id}.png`, {
-        type: blob.type || "image/png",
+      file = new File([blob], `${pick.id}.${kind === "video" ? "mp4" : "png"}`, {
+        type: blob.type || (kind === "video" ? "video/mp4" : "image/png"),
       });
     }
     const media = await uploadMedia(file, kind, (f) =>
@@ -278,8 +289,24 @@ export function Studio({
     return media;
   }
 
+  function resetComposer() {
+    setCharacter(null);
+    setClip(null);
+    setReferences([]);
+    setSwapPrompt(SWAP_PROMPT);
+    setGeneratePrompt("");
+    setLength(GENERATE_SECONDS[0]);
+    setRatio(GENERATE_RATIOS[0]);
+    setPrepared(null);
+    setError("");
+    setProgress("");
+    if (promptHighlight.current) promptHighlight.current.scrollTop = 0;
+  }
+
   async function prepare() {
     if (busy) return;
+    if (!promptReady)
+      return setError("Replace the highlighted placeholders or write your own prompt first.");
     if (mode === "swap" && (!character || !clip))
       return setError("Pick a character and add a video first.");
     if (mode === "generate" && prompt.trim().length < 3)
@@ -294,7 +321,7 @@ export function Studio({
               kind: "swap",
               character: await upload(character!, "image"),
               video: await upload(clip!, "video"),
-              prompt: prompt.trim(),
+              prompt: prompt.trim().replace(/\[([^\]]+)\]/g, "$1"),
             }
           : {
               kind: "generate",
@@ -337,7 +364,7 @@ export function Studio({
       setItems((list) => [created, ...list.filter((s) => s.id !== created.id)]);
       setPrepared(null);
       setClip(null);
-      setPrompt("");
+      setPrompt(mode === "swap" ? SWAP_PROMPT : "");
       void refreshPlan();
       setTimeout(
         () =>
@@ -419,9 +446,9 @@ export function Studio({
                     {mode === "swap" ? (
                       <>
                         <div className="media-placeholder">
-                          <span className="media-label">Character</span>
+                          <span className="media-label">Character image</span>
                           <button
-                            className="media-tile"
+                            className="media-tile character-upload"
                             aria-label="Upload your own character"
                             title="Upload your own character"
                             onClick={() => imageInput.current?.click()}
@@ -429,7 +456,7 @@ export function Studio({
                             {character ? (
                               <img src={character.url} alt={character.name} />
                             ) : (
-                              <Plus size={20} strokeWidth={1.5} />
+                              <span className="upload-cue"><UserRound size={25} strokeWidth={1.5} /><span>Add character</span><small>JPG, PNG or WebP</small></span>
                             )}
                           </button>
                           {character && (
@@ -443,9 +470,9 @@ export function Studio({
                           )}
                         </div>
                         <div className="media-placeholder">
-                          <span className="media-label">Video</span>
+                          <span className="media-label">Source video</span>
                           <button
-                            className="media-tile"
+                            className="media-tile video-upload"
                             aria-label="Upload a video"
                             title="Upload a 40 second to 10 minute video"
                             onClick={() => videoInput.current?.click()}
@@ -458,7 +485,7 @@ export function Studio({
                                 preload="metadata"
                               />
                             ) : (
-                              <Plus size={20} strokeWidth={1.5} />
+                              <span className="upload-cue"><Film size={25} strokeWidth={1.5} /><span>Add video</span><small>40 sec – 10 min</small></span>
                             )}
                           </button>
                           {clip && (
@@ -508,10 +535,36 @@ export function Studio({
                       </div>
                     )}
                   </div>
+                  {mode === "swap" && <p className="prompt-hint">Identify exactly who to replace by clothing, appearance, or position—especially if several people are visible. Click a [placeholder] to edit it, or write your own prompt.</p>}
+                  <div className={mode === "swap" ? "prompt-editor has-highlights" : "prompt-editor"}>
+                    {mode === "swap" && (
+                      <div className="prompt-highlight" aria-hidden="true" ref={promptHighlight}>
+                        {prompt.split(/(\[[^\]]+\])/g).map((part, index) =>
+                          /^\[[^\]]+\]$/.test(part) ? <mark key={index}>{part}</mark> : part,
+                        )}{"\n"}
+                      </div>
+                    )}
                   <textarea
+                    onScroll={(e) => {
+                      if (promptHighlight.current) {
+                        promptHighlight.current.scrollTop = e.currentTarget.scrollTop;
+                        promptHighlight.current.scrollLeft = e.currentTarget.scrollLeft;
+                      }
+                    }}
                     aria-label={
                       mode === "swap" ? "Swap direction" : "Video description"
                     }
+                    onClick={(e) => {
+                      if (mode !== "swap") return;
+                      const input = e.currentTarget;
+                      const position = input.selectionStart;
+                      for (const match of input.value.matchAll(/\[[^\]]+\]/g)) {
+                        if (position >= match.index! && position <= match.index! + match[0].length) {
+                          input.setSelectionRange(match.index!, match.index! + match[0].length);
+                          break;
+                        }
+                      }
+                    }}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={(e) => {
@@ -532,6 +585,7 @@ export function Studio({
                         : "Describe the video you want to create…"
                     }
                   />
+                  </div>
                   <div className="composer-foot">
                     {mode === "generate" && (
                       <div className="generate-options">
@@ -568,10 +622,13 @@ export function Studio({
                       </div>
                     )}
                     <div className="composer-tools">
+                      <button type="button" className="composer-reset" disabled={busy} onClick={resetComposer}>
+                        <RotateCcw size={13} /> Reset
+                      </button>
                       {!prepared && (
                         <button
-                          className="swap-go"
-                          disabled={busy}
+                          className={`swap-go${ready ? " is-ready" : ""}`}
+                          disabled={busy || !ready}
                           aria-label="Review"
                           onClick={() => void prepare()}
                         >
@@ -638,7 +695,8 @@ export function Studio({
           </section>
         </div>
 
-        <section className="swaps" ref={gallery} aria-label="My videos">
+        <section className="swaps" ref={gallery} aria-label={items.length ? "My videos" : "Examples"}>
+          {items.length > 0 && (
           <div className="gallery-heading">
             <div>
               <h2>My videos</h2>
@@ -661,6 +719,7 @@ export function Studio({
               </button>
             )}
           </div>
+          )}
           {items.length ? (
             <div className="swaps-grid">
               {items.map((s) => {
@@ -752,12 +811,24 @@ export function Studio({
               })}
             </div>
           ) : (
-            <div className="gallery-empty">
-              <strong>Your videos will appear here.</strong>
-              <span>
-                Describe a video to generate, or swap a character into your own
-                clip. <Link href="/#examples">See examples</Link>
-              </span>
+            <div className="studio-example">
+              <div className="studio-example-heading">
+                <div><span className="example-eyebrow">Examples</span><h3>Same scene. A new character.</h3><p>See what a swap can do. Try these inputs or upload your own.</p></div>
+                {plan.active && <button className="example-use" onClick={() => {
+                  setMode("swap");
+                  setCharacter({ id: "example-character", name: "Bearded man reference", url: "/showcase/character-reference.png" });
+                  setClip({ id: "example-source", name: "source-video.mp4", url: "/showcase/source-video.mp4", seconds: 60 });
+                  setSwapPrompt("Swap the man wearing a blue suit in the video with the old man in the reference image. Use the old man’s attire, not the blue suit, and match the original character’s motions.");
+                  document.querySelector(".composer-stage")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}>Use these inputs <ArrowUp size={14} /></button>}
+              </div>
+              <div className="example-media-flow">
+                <figure><figcaption><Film size={14} /> Source video</figcaption><video src="/showcase/source-video.mp4" controls playsInline preload="metadata" /></figure>
+                <span className="example-operator" aria-hidden="true">+</span>
+                <figure><figcaption><UserRound size={14} /> Character image</figcaption><img src="/showcase/character-reference.png" alt="Bearded man wearing a dark shirt and shorts" /></figure>
+                <ArrowRight className="example-operator" size={20} aria-hidden="true" />
+                <figure className="example-result"><figcaption>Character swapped</figcaption><video src="/showcase/character-swap.mp4" poster="/showcase/character-swap.jpg" controls playsInline preload="metadata" /></figure>
+              </div>
             </div>
           )}
         </section>

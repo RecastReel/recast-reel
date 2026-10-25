@@ -23,7 +23,7 @@ Use the hosted version at [recastreel.com](https://recastreel.com), or run it yo
 
 4. Open http://localhost:3000 and start creating.
 
-You don't need to sign up or pay; videos are charged to your API key.
+You don't need to sign up or pay; videos are charged to your API key. The dev server listens only on 127.0.0.1 because local mode has no sign-in. Use a production build with authentication for network access.
 
 ## Run it in production
 
