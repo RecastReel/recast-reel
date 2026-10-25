@@ -21,8 +21,8 @@ export const localMode = () => !isProduction && process.env.LOCAL_MODE !== '0';
 /** Freemius billing: always in production; with LOCAL_MODE=0, when configured. */
 export const billingEnabled = () => isProduction || (!localMode() && Boolean(process.env.FREEMIUS_API_KEY));
 
-/** With LOCAL_MODE=0 and no Resend, sign-in links are shown on the page. */
-export const showSignInLinks = () => !isProduction && !process.env.RESEND_API_KEY;
+/** With LOCAL_MODE=0 and no Resend, sign-in codes are shown on the page. */
+export const showSignInCodes = () => !isProduction && !process.env.RESEND_API_KEY;
 
 export const hasVideoKey = () => Boolean(process.env.CUE_API_KEY);
 

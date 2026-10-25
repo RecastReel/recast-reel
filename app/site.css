@@ -121,3 +121,6 @@
 .legal li { margin-bottom: 6px; }
 .legal strong { color: #ddd; font-weight: 500; }
 .legal a { color: #b5cce6; text-decoration: underline; }
+.auth-card .auth-code { font-size: 24px; text-align: center; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
+.auth-card .button-link:disabled { opacity: .5; cursor: not-allowed; }
+.auth-card .local-sign-in-code { padding: 10px; border: 1px dashed #6b7687; border-radius: 10px; color: #bdd5f0; }

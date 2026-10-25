@@ -1,10 +1,11 @@
+import { createHmac } from 'node:crypto';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
-import { magicLink } from 'better-auth/plugins';
+import { emailOTP } from 'better-auth/plugins';
 import { appUrl, assertHostedConfig, authSecret } from './config';
 import { getDb, type Db } from './db';
-import { sendSignInEmail } from './email';
+import { sendSignInCode } from './email';
 import * as schema from './db/schema';
 
 function createAuth(db: Db) {
@@ -14,11 +15,15 @@ function createAuth(db: Db) {
   secret: authSecret(),
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   plugins: [
-   // One passwordless sign-in: the link signs in existing accounts and
-   // creates new ones.
-   magicLink({
-    expiresIn: 15 * 60,
-    sendMagicLink: ({ email, url }) => sendSignInEmail(email, url),
+   // Single-use email codes sign in existing accounts and create new ones.
+   emailOTP({
+    otpLength: 6,
+    expiresIn: 5 * 60,
+    allowedAttempts: 3,
+    resendStrategy: 'rotate',
+    storeOTP: { hash: async (otp) => createHmac('sha256', authSecret()).update(`email-otp:${otp}`).digest('hex') },
+    rateLimit: { window: 60, max: 3 },
+    sendVerificationOTP: ({ email, otp, type }) => type === 'sign-in' ? sendSignInCode(email, otp) : Promise.resolve(),
    }),
    nextCookies(),
   ],

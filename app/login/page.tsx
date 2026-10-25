@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { showSignInLinks } from '../../lib/config';
+import { showSignInCodes } from '../../lib/config';
 import { currentSession } from '../../lib/session';
 import { AuthForm } from '../auth-form';
 import { SiteHeader } from '../site-header';
@@ -13,7 +13,7 @@ export default async function Page() {
  return (
   <div className="site">
    <SiteHeader signedIn={false} />
-   <main className="auth-main"><Suspense><AuthForm showLinks={showSignInLinks()} /></Suspense></main>
+   <main className="auth-main"><Suspense><AuthForm showCodes={showSignInCodes()} /></Suspense></main>
   </div>
  );
 }

@@ -13,7 +13,7 @@ export default function Terms() {
    <p>These terms are an agreement between you and Recast Reel (“Recast Reel”, “we”, “us”) for using recastreel.com. By signing in, you accept them. If you don’t agree, please don’t use the service.</p>
 
    <h2>1. Who can use Recast Reel</h2>
-   <p>You must be at least 18 and able to enter a binding contract. You’re responsible for your account and for everything created with it. Keep access to your email secure, because sign-in links are sent there.</p>
+   <p>You must be at least 18 and able to enter a binding contract. You’re responsible for your account and for everything created with it. Keep access to your email secure, because sign-in codes are sent there.</p>
 
    <h2>2. Subscription and credits</h2>
    <ul>
