@@ -737,7 +737,7 @@ export function Studio({
                   <article className="task-card" key={s.id}>
                     {s.outputs[0] ? (
                       <video
-                        className="task-preview"
+                        className="task-preview studio-video"
                         src={s.outputs[0].url}
                         controls
                         playsInline
@@ -765,6 +765,7 @@ export function Studio({
                       </div>
                     )}
                     <div className="task-copy">
+                      {s.outputs[0] && <span className="playback-size-note">Fullscreen viewing · up to 720p</span>}
                       <span className="task-kind">
                         {s.kind === "swap"
                           ? "Character swap"
@@ -823,11 +824,11 @@ export function Studio({
                 }}>Use these inputs <ArrowUp size={14} /></button>}
               </div>
               <div className="example-media-flow">
-                <figure><figcaption><Film size={14} /> Source video</figcaption><video src="/showcase/source-video.mp4" controls playsInline preload="metadata" /></figure>
+                <figure><figcaption><Film size={14} /> Source video</figcaption><video className="studio-video" src="/showcase/source-video.mp4" controls playsInline preload="metadata" /><span className="playback-size-note">Fullscreen viewing · up to 720p</span></figure>
                 <span className="example-operator" aria-hidden="true">+</span>
                 <figure><figcaption><UserRound size={14} /> Character image</figcaption><img src="/showcase/character-reference.png" alt="Bearded man wearing a dark shirt and shorts" /></figure>
                 <ArrowRight className="example-operator" size={20} aria-hidden="true" />
-                <figure className="example-result"><figcaption>Character swapped</figcaption><video src="/showcase/character-swap.mp4" poster="/showcase/character-swap.jpg" controls playsInline preload="metadata" /></figure>
+                <figure className="example-result"><figcaption>Character swapped</figcaption><video className="studio-video" src="/showcase/character-swap.mp4" poster="/showcase/character-swap.jpg" controls playsInline preload="metadata" /><span className="playback-size-note">Fullscreen viewing · up to 720p</span></figure>
               </div>
             </div>
           )}

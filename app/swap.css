@@ -67,9 +67,7 @@
 .swap .refresh-all:hover { background: #333; color: #fff; }
 .swaps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
 .task-card { min-width: 0; overflow: hidden; border: 1px solid #363636; border-radius: 17px; background: #232323; }
-.task-preview { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #191919; }
-.task-preview:fullscreen { width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; background: #000; }
-.task-preview:-webkit-full-screen { width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; background: #000; }
+.task-preview { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #191919; }
 .task-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #b4cbe2; font-size: 12px; }
 .task-placeholder.is-terminal { color: #a6a6a6; }
 .task-copy { padding: 13px; }
@@ -262,3 +260,20 @@
 .swap .composer-reset { display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 14px; padding: 6px 9px; background: transparent; color: #aab3bf; font-size: 11px; }
 .swap .composer-reset:hover:not(:disabled) { background: #343b44; color: #eee; }
 .swap .composer-reset:disabled { opacity: .5; }
+
+/* Keep fullscreen media centered within a 720p viewing area, without upscaling
+   smaller sources. Padding limits the picture while retaining native controls. */
+.swap video.studio-video:fullscreen {
+ width: 100%; height: 100%; max-width: none; max-height: none;
+ box-sizing: border-box; aspect-ratio: auto; border-radius: 0;
+ padding: max(0px, calc((100vh - 720px) / 2)) max(0px, calc((100vw - 1280px) / 2));
+ object-fit: scale-down; object-position: center; background: #000;
+}
+.swap video.studio-video:-webkit-full-screen {
+ width: 100%; height: 100%; max-width: none; max-height: none;
+ box-sizing: border-box; aspect-ratio: auto; border-radius: 0;
+ padding: max(0px, calc((100vh - 720px) / 2)) max(0px, calc((100vw - 1280px) / 2));
+ object-fit: scale-down; object-position: center; background: #000;
+}
+
+.playback-size-note { display: block; margin: 7px 0; color: #a7b8ca; font-size: 10px; line-height: 1.5; }
