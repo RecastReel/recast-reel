@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { taskDisplay } from "../../lib/task-status";
 import type { Swap } from "../../lib/swap-client";
 
 function clock(totalSeconds: number) {
@@ -36,15 +37,12 @@ export function TaskTimer({ task }: { task: Swap }) {
   const elapsed = (now - Date.parse(task.createdAt)) / 1000;
   const target = finishBy(task.estimate);
   const left = target === null ? null : (target - now) / 1000;
-  // A queued task reports 0%; show the waiting bar instead.
-  const percent =
-    task.status === "queued" ? undefined : task.progress?.percent;
+  const display = taskDisplay(task);
+  const percent = display.waiting ? undefined : task.progress?.percent;
 
   let headline: string;
-  if (task.status === "queued")
-    headline = task.queue
-      ? `Waiting to start · #${task.queue.position} in line`
-      : "Waiting to start";
+  if (display.waiting) headline = display.waitingLabel;
+  else if (display.phase === "billing_pending") headline = "Finalizing your video";
   else if (left !== null && left > 0) headline = `About ${clock(left)} left`;
   else if (left !== null) headline = "Taking a little longer than estimated";
   else headline = "Rendering your video";

@@ -59,8 +59,9 @@ function ownUpload(userId: string, input: Record<string, unknown>) {
 }
 
 /** Public task shape: status, progress and our own output URLs only. */
-function publicSwap(row: typeof swaps.$inferSelect) {
+export function publicSwap(row: typeof swaps.$inferSelect) {
   const task = (row.task ?? {}) as {
+    processing_state?: string;
     progress?: unknown;
     estimate?: unknown;
     message?: string;
@@ -72,6 +73,7 @@ function publicSwap(row: typeof swaps.$inferSelect) {
     id: row.id,
     kind: row.kind,
     status: row.status,
+    processingState: task.processing_state,
     prompt: row.prompt,
     seconds: row.seconds,
     costCents: row.costCents,

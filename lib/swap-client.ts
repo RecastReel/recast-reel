@@ -3,7 +3,8 @@
 export type PlanStatus = { billing: boolean; active: boolean; cancelAtPeriodEnd: boolean; periodEnd: string | null; creditCents: number; usedCents: number; remainingCents: number };
 export type Swap = {
  id: string; kind: 'swap' | 'generate'; status: string; prompt: string; seconds: number; costCents: number; refunded: boolean; createdAt: string; expiresAt?: string;
- message?: string; progress?: { message?: string; stage?: string; percent?: number }; queue?: { position: number };
+ processingState?: 'waiting_to_start' | 'processing' | 'waiting_for_gpu';
+ message?: string; progress?: { message?: string; stage?: string; percent?: number }; queue?: { position?: number; state?: string; admitted_at?: string | null; expires_at?: string | null };
  estimate?: { stale?: boolean; updatedAt?: string; remainingSeconds?: { low: number; high: number } | null; completionAt?: { earliest: string; latest: string } | null };
  outputs: { mime: string; url: string }[];
 };

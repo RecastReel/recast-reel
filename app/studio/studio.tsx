@@ -29,6 +29,7 @@ import {
   type Swap,
   type UploadedMedia,
 } from "../../lib/swap-client";
+import { taskDisplay } from "../../lib/task-status";
 import { SubscribeButton } from "../billing-buttons";
 import { TaskTimer } from "./task-timer";
 import { TrimDialog } from "./trim-dialog";
@@ -47,20 +48,6 @@ const terminal = (status: string) => TERMINAL.includes(status);
 const seconds = (n: number) =>
   `${Math.max(0, Math.round(n))} second${Math.round(n) === 1 ? "" : "s"}`;
 
-function statusLabel(status: string) {
-  return (
-    (
-      {
-        succeeded: "Complete",
-        failed: "Failed",
-        needs_input: "Needs attention",
-        cancelled: "Cancelled",
-        expired: "Expired",
-        queued: "Queued",
-      } as Record<string, string>
-    )[status] ?? "In progress"
-  );
-}
 function localDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
     const el = document.createElement("video");
@@ -186,7 +173,7 @@ export function Studio({
       if (!stopped)
         timer = setTimeout(
           () => void check(),
-          document.visibilityState === "hidden" ? 60000 : 10000,
+          document.visibilityState === "hidden" ? 60000 : 3000,
         );
     }
     const resume = () => {
@@ -727,16 +714,7 @@ export function Studio({
           {items.length ? (
             <div className="swaps-grid">
               {items.map((s) => {
-                const detail =
-                  s.status === "queued"
-                    ? "Your video is in line and will start automatically."
-                    : s.progress?.message ||
-                      s.message ||
-                      (s.status === "succeeded"
-                        ? "Your video is ready."
-                        : terminal(s.status)
-                          ? "This video could not be completed."
-                          : "Working on your video.");
+                const display = taskDisplay(s);
                 return (
                   <article className="task-card" key={s.id}>
                     {s.outputs[0] ? (
@@ -759,9 +737,9 @@ export function Studio({
                           <LoaderCircle size={22} className="spin" />
                         )}
                         <span>
-                          {statusLabel(s.status)}
+                          {display.label}
                           {!terminal(s.status) &&
-                          s.status !== "queued" &&
+                          !display.waiting &&
                           typeof s.progress?.percent === "number"
                             ? ` · ${s.progress.percent}%`
                             : ""}
@@ -783,10 +761,10 @@ export function Studio({
                           role="status"
                           aria-live="polite"
                         >
-                          {statusLabel(s.status)}
+                          {display.label}
                         </span>
                       </div>
-                      <p>{detail}</p>
+                      <p>{display.detail}</p>
                       {!terminal(s.status) && <TaskTimer task={s} />}
                       {s.refunded && (
                         <span className="task-wait-note">
