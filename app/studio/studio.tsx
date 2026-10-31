@@ -38,7 +38,7 @@ type Mode = "swap" | "generate";
 type Pick = { id: string; name: string; url: string; file?: File };
 type Prepared = { body: Record<string, unknown>; costCents: number; key: string };
 
-const SWAP_PROMPT = "Swap [specify the character to replace, e.g. the man in a blue suit] in the video with [describe the person in your reference image]. Use the reference person’s clothing instead of the original character’s outfit, and match the original character’s motions.";
+const SWAP_PROMPT = "Swap [specify the character to replace, e.g. the man in a blue suit] in the video with [describe the person in your reference image].";
 
 const MIN_SECONDS = 40,
   MAX_SECONDS = 600;
@@ -665,6 +665,7 @@ export function Studio({
                       <div className="row">
                         <button
                           className="estimate-cancel"
+                          disabled={busy}
                           onClick={() => setPrepared(null)}
                         >
                           Edit
@@ -672,9 +673,12 @@ export function Studio({
                         <button
                           className="estimate-confirm"
                           disabled={busy}
+                          aria-busy={busy}
                           onClick={() => void confirm()}
                         >
-                          {mode === "swap" ? "Start swap" : "Generate"}
+                          {busy ? (
+                            <><LoaderCircle size={14} className="spin" aria-hidden="true" /> Starting…</>
+                          ) : mode === "swap" ? "Start swap" : "Generate"}
                         </button>
                       </div>
                     </div>
