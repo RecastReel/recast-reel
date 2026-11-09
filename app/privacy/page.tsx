@@ -11,7 +11,7 @@ export default function Privacy() {
 
    <h2>What we collect</h2>
    <ul>
-    <li><strong>Your email address</strong>, to send sign-in codes and run your account. We don’t ask for your name or a password.</li>
+    <li><strong>Your email address</strong>, to send sign-in codes and run your account. If you choose password sign-in, we store a securely hashed password. You can also sign in using an email code.</li>
     <li><strong>What you upload and create</strong>: videos, character and reference images, prompts, and the videos we make for you.</li>
     <li><strong>Usage records</strong>: which videos you created, their length, cost and status, so we can track your credit balance and return credits for failed videos.</li>
     <li><strong>Subscription details</strong> from our payment provider: whether your plan is active and its billing dates. We never see or store your full card details.</li>

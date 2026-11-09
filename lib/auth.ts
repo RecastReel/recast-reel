@@ -14,6 +14,7 @@ function createAuth(db: Db) {
   baseURL: appUrl(),
   secret: authSecret(),
   database: drizzleAdapter(db, { provider: 'pg', schema }),
+  emailAndPassword: { enabled: true, minPasswordLength: 8, maxPasswordLength: 128 },
   plugins: [
    // Single-use email codes sign in existing accounts and create new ones.
    emailOTP({

@@ -15,7 +15,7 @@ test('email-code sign-in lifecycle against an isolated database', async (t) => {
  process.env.BETTER_AUTH_URL = 'http://localhost:3000';
  const { getAuth } = await import('../lib/auth');
  const { getDb } = await import('../lib/db');
- const { verification } = await import('../lib/db/schema');
+ const { verification, account } = await import('../lib/db/schema');
  const { localSignInCode } = await import('../lib/email');
  const auth = await getAuth();
  const db = await getDb();
@@ -44,6 +44,33 @@ test('email-code sign-in lifecycle against an isolated database', async (t) => {
    const next = await verify(email, nextCode);
    assert.equal(next.status, 200);
    assert.equal((await next.json()).user.id, data.user.id);
+  });
+  await t.test('password sign-up and sign-in coexist with email codes', async () => {
+   const email = 'password-user@example.com';
+   const password = 'a-long-test-password-42';
+   const short = await auth.api.signUpEmail({ body: { email, password: 'short', name: 'Test' }, asResponse: true });
+   assert.equal(short.status, 400);
+   const signup = await auth.api.signUpEmail({ body: { email, password, name: 'Test' }, asResponse: true });
+   assert.equal(signup.status, 200);
+   assert.ok(signup.headers.get('set-cookie'));
+   const userId = (await signup.json()).user.id;
+   const credentials = await db.select().from(account).where(eq(account.userId, userId));
+   assert.equal(credentials.length, 1);
+   assert.equal(credentials[0].providerId, 'credential');
+   assert.ok(credentials[0].password);
+   assert.notEqual(credentials[0].password, password);
+   const wrong = await auth.api.signInEmail({ body: { email, password: 'incorrect-password' }, asResponse: true });
+   assert.equal(wrong.status, 401);
+   const signin = await auth.api.signInEmail({ body: { email, password }, asResponse: true });
+   assert.equal(signin.status, 200);
+   assert.ok(signin.headers.get('set-cookie'));
+   assert.equal((await signin.json()).user.id, userId);
+   const code = await send(email);
+   const alternative = await verify(email, code);
+   assert.equal(alternative.status, 200);
+   assert.equal((await alternative.json()).user.id, userId);
+   const duplicate = await auth.api.signUpEmail({ body: { email, password, name: 'Test' }, asResponse: true });
+   assert.equal(duplicate.status, 422);
   });
   await t.test('three incorrect attempts lock out even the correct code', async () => {
    const email = 'attempt-limit@example.com';

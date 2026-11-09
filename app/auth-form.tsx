@@ -5,11 +5,13 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authClient } from '../lib/auth-client';
 
-/** Email, then a single-use code. The same flow also creates new accounts. */
+/** Password authentication with email codes as an alternative. */
 export function AuthForm({ showCodes = false }: { showCodes?: boolean }) {
  const params = useSearchParams();
  const next = params.get('next');
  const destination = next?.startsWith('/') && !next.startsWith('//') && !/[\\\x00-\x1f]/.test(next) ? next : '/studio';
+ const [mode, setMode] = useState<'signin' | 'signup' | 'code'>(params.get('mode') === 'signup' ? 'signup' : 'signin');
+ const [password, setPassword] = useState('');
  const [email, setEmail] = useState('');
  const [sent, setSent] = useState('');
  const [code, setCode] = useState('');
@@ -24,6 +26,25 @@ export function AuthForm({ showCodes = false }: { showCodes?: boolean }) {
   const timer = setTimeout(() => setResendIn((n) => Math.max(0, n - 1)), 1000);
   return () => clearTimeout(timer);
  }, [resendIn]);
+
+ function changeMode(mode: 'signin' | 'signup' | 'code') {
+  setMode(mode); setPassword(''); setError(''); setNotice('');
+ }
+
+ async function submitPassword(event: React.FormEvent) {
+  event.preventDefault();
+  if (busy) return;
+  setBusy(true); setError('');
+  const target = email.trim().toLowerCase();
+  try {
+   const { error } = mode === 'signup'
+    ? await authClient.signUp.email({ email: target, password, name: target.split('@')[0] })
+    : await authClient.signIn.email({ email: target, password });
+   if (error) { setError(error.message || 'Could not continue. Try again or use an email code.'); return; }
+   window.location.assign(destination);
+  } catch { setError('Could not continue. Check your connection and try again.'); }
+  finally { setBusy(false); }
+ }
 
  async function sendCode(target: string) {
   if (busy) return;
@@ -68,12 +89,16 @@ export function AuthForm({ showCodes = false }: { showCodes?: boolean }) {
  );
 
  return (
-  <form className="auth-card" onSubmit={(e) => { e.preventDefault(); void sendCode(email.trim().toLowerCase()); }}>
-   <h1>Sign in to Recast Reel</h1>
-   <p>Enter your email and we’ll send you a six-digit code. New here? The same code creates your account.</p>
+  <form className="auth-card" onSubmit={(e) => { if (mode === 'code') { e.preventDefault(); void sendCode(email.trim().toLowerCase()); } else void submitPassword(e); }}>
+   <h1>{mode === 'signup' ? 'Create your account' : 'Sign in to Recast Reel'}</h1>
+   <p>{mode === 'code' ? 'We’ll email you a six-digit code to sign in or create an account.' : mode === 'signup' ? 'Get started with your email and a password.' : 'Welcome back. Sign in with your email and password.'}</p>
    <label>Email<input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
+   {mode !== 'code' && <label>Password<input type="password" required minLength={mode === 'signup' ? 8 : undefined} maxLength={128} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} />{mode === 'signup' && <small>Use at least 8 characters.</small>}</label>}
    {error && <p className="form-error" role="alert">{error}</p>}
-   <button className="button-primary" disabled={busy}>{busy ? 'Sending…' : 'Email me a code'}</button>
+   <button className="button-primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'code' ? 'Email me a code' : mode === 'signup' ? 'Create account' : 'Sign in'}</button>
+   <button type="button" className="button-link" disabled={busy} onClick={() => changeMode(mode === 'signup' ? 'signin' : 'signup')}>{mode === 'signup' ? 'Already have an account? Sign in' : 'New here? Create an account'}</button>
+   <button type="button" className="button-link" disabled={busy} onClick={() => changeMode(mode === 'code' ? 'signin' : 'code')}>{mode === 'code' ? 'Sign in with a password' : 'Use an email code instead'}</button>
+   {mode === 'signin' && <p>Forgot your password or previously used email sign-in? Use an email code to access your account.</p>}
    <p className="auth-legal">By continuing you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</p>
   </form>
  );
