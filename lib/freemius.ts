@@ -2,7 +2,7 @@ import { Freemius, type PurchaseInfo, type PaymentEntity } from '@freemius/sdk';
 import { eq, sql } from 'drizzle-orm';
 import { appUrl } from './config';
 import { getDb } from './db';
-import { creditPack, packPricingId, packForPricing } from './credit-packs';
+import { creditPack, packPricingId, packForPricing, topupPlanId } from './credit-packs';
 import { refundedCredits } from './purchase-credits';
 import { user, user_fs_entitlement } from './db/schema';
 
@@ -32,7 +32,7 @@ export const isSandbox = () => process.env.FREEMIUS_SANDBOX !== 'false';
 /** Hosted one-time credit checkout. All prices are configured in Freemius. */
 export async function checkoutLink(email: string, amount: number) {
  const pack = creditPack(amount);
- const planId = process.env.FREEMIUS_TOPUP_PLAN_ID;
+ const planId = topupPlanId();
  const pricingId = pack && packPricingId(amount);
  if (!pack || !planId || !pricingId) throw new Error('Credit packs are not configured');
  const data = await freemius().api.product.retrievePricingData();
@@ -62,7 +62,7 @@ async function savePurchase(purchase: PurchaseInfo) {
   return;
  }
  const pack = packForPricing(purchase.pricingId);
- const topup = purchase.planId === process.env.FREEMIUS_TOPUP_PLAN_ID && purchase.isOneOff() && pack;
+ const topup = purchase.planId === topupPlanId() && purchase.isOneOff() && pack;
  if (topup && purchase.quota !== topup.usd) throw new Error('Unexpected credit pack quota');
  if (!topup && purchase.planId !== process.env.FREEMIUS_PLAN_ID) throw new Error('Unrecognized Freemius plan or pricing');
  const record = purchase.toEntitlementRecord({ renewalDate: purchase.renewalDate });

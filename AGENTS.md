@@ -38,7 +38,8 @@ All Freemius SDK calls are server-side; the keys come from env only.
 | Entitlement mirror table | `lib/db/schema.ts` (`user_fs_entitlement`) |
 
 Env (server-only, git-ignored): `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`,
-`FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_TOPUP_PLAN_ID`, `FREEMIUS_PRICING_ID_TOPUP_{10,25,50,100}`, `FREEMIUS_SANDBOX`.
+`FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_SANDBOX`.
+Public top-up plan/pricing IDs are built into `lib/credit-packs.ts`; env overrides are optional.
 Retain `FREEMIUS_PLAN_ID` and `MONTHLY_CREDIT_USD` only for legacy credit preservation.
 Credit packs add 10/25/50/100 credits for $12.20/$30.50/$61/$122 USD before tax.
 The price includes the 22% service fee; Freemius adds applicable taxes.

@@ -39,7 +39,7 @@ the services below to be configured. See `.env.example` for each setting.
 | [MadeByCue](https://www.madebycue.dev) | Making the videos      | `CUE_API_KEY`                                                                                                                   |
 | [Neon](https://neon.tech) (Postgres)   | Database               | `DATABASE_URL`                                                                                                                  |
 | [Resend](https://resend.com)           | Sign-in emails         | `RESEND_API_KEY`, `EMAIL_FROM`                                                                                                  |
-| [Freemius](https://freemius.com)       | One-time credit packs | `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`, `FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_TOPUP_PLAN_ID`, `FREEMIUS_PRICING_ID_TOPUP_{10,25,50,100}`, `FREEMIUS_SANDBOX` |
+| [Freemius](https://freemius.com)       | One-time credit packs | `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`, `FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_SANDBOX` |
 | Better Auth                            | Sessions               | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`                                                                                         |
 
 Setup:
@@ -59,7 +59,10 @@ Setup:
    | 50 | $11.00 | $61.00 |
    | 100 | $22.00 | $122.00 |
 
-   Set `FREEMIUS_TOPUP_PLAN_ID` and the four `FREEMIUS_PRICING_ID_TOPUP_*` values.
+   The verified plan ID (`78471`) and pricing IDs (`118288`–`118291`) are
+   included in `lib/credit-packs.ts`; no additional environment settings are needed.
+   Optional `FREEMIUS_TOPUP_PLAN_ID` and `FREEMIUS_PRICING_ID_TOPUP_*` overrides
+   support a different Freemius product or test configuration.
    Checkout validates the USD price, quota, and absence of recurring prices.
    The service fee is included in Freemius's configured product price, not an
    additional tax. Freemius calculates applicable sales taxes on that total.

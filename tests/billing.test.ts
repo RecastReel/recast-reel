@@ -6,11 +6,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import type { PurchaseInfo, PaymentEntity } from '@freemius/sdk';
-import { CREDIT_PACKS, creditPack } from '../lib/credit-packs';
+import { CREDIT_PACKS, creditPack, packPricingId, topupPlanId } from '../lib/credit-packs';
 import { refundedCredits } from '../lib/purchase-credits';
 
 const payment = (type: PaymentEntity['type'], gross: number, license = 'license-25'): PaymentEntity => ({
  type, gross, license_id: license, gateway_fee: 0, is_renewal: false,
+});
+
+test('public Freemius IDs work without deployment overrides', () => {
+ delete process.env.FREEMIUS_TOPUP_PLAN_ID;
+ for (const amount of [10, 25, 50, 100]) delete process.env[`FREEMIUS_PRICING_ID_TOPUP_${amount}`];
+ assert.equal(topupPlanId(), '78471');
+ assert.deepEqual([10, 25, 50, 100].map(packPricingId), ['118288', '118289', '118290', '118291']);
 });
 
 test('credit pack totals and strict selection', () => {
