@@ -20,6 +20,8 @@ async function openBillingLink(kind: 'checkout' | 'portal', fallback: string, am
 
 /** One-time purchases, with the entire pre-tax price disclosed. */
 export function CreditPacks({ signedIn = true }: { signedIn?: boolean }) {
+ const [amount, setAmount] = useState(25);
+ const pack = CREDIT_PACKS.find((pack) => pack.usd === amount)!;
  const [busy, setBusy] = useState<number | null>(null);
  const [error, setError] = useState('');
  async function buy(amount: number) {
@@ -28,16 +30,18 @@ export function CreditPacks({ signedIn = true }: { signedIn?: boolean }) {
   const failed = await openBillingLink('checkout', 'Checkout is unavailable. Try again shortly.', amount);
   if (failed) { setBusy(null); setError(failed); }
  }
- return <div className="credit-packs">
-  <div className="credit-pack-grid">{CREDIT_PACKS.map((pack) => <div className="price-card" key={pack.usd}>
-   <h3>{pack.usd} credits</h3>
-   <p>{usd(pack.creditCents)} in video credits</p>
-   <p>Service fee (22%): {usd(pack.feeCents)}</p>
-   <p><strong>{usd(pack.totalCents)} USD</strong> before tax</p>
-   {signedIn ? <button className="button-primary" disabled={busy !== null} onClick={() => void buy(pack.usd)}>{busy === pack.usd ? 'Opening checkout…' : `Buy ${pack.usd} credits`}</button> : <Link className="button-primary" href="/login?next=/account">Get started</Link>}
-  </div>)}</div>
-  <p className="muted">One-time payment. No subscription. One credit = US$1 of video. Unused credits don’t expire. Applicable taxes calculated at checkout.</p>
-  <p className="auth-legal">Successfully consumed credits are non-refundable. See our <Link href="/refunds">Refund Policy</Link>.</p>
+ return <div className="credit-packs price-card">
+  <h3>Video credits</h3>
+  <label className="credit-pack-label">Choose your credits
+   <select value={amount} disabled={busy !== null} onChange={(event) => { setAmount(Number(event.target.value)); setError(''); }}>
+    {CREDIT_PACKS.map((option) => <option key={option.usd} value={option.usd}>{option.usd} credits</option>)}
+   </select>
+  </label>
+  <div className="price" aria-live="polite"><strong>{usd(pack.totalCents)}</strong><span>USD</span></div>
+  <p className="credit-pack-fee">{usd(pack.creditCents)} credits + {usd(pack.feeCents)} service fee (22%).<br />Applicable tax added at checkout.</p>
+  {signedIn ? <button className="button-primary" disabled={busy !== null} onClick={() => void buy(amount)}>{busy !== null ? 'Opening checkout…' : 'Buy credits'}</button> : <Link className="button-primary" href="/login?next=/account">Get started</Link>}
+  <p className="credit-pack-note">No subscription. Credits don’t expire.</p>
+  <Link className="credit-pack-policy" href="/refunds">Refund Policy</Link>
   {error && <p className="form-error" role="alert">{error}</p>}
  </div>;
 }
