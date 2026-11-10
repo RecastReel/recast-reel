@@ -6,6 +6,7 @@ export function SiteFooter() {
       <nav aria-label="Legal">
         <Link href="/terms">Terms</Link>
         <Link href="/privacy">Privacy</Link>
+        <Link href="/refunds">Refunds</Link>
         <a href="mailto:support@recastreel.com">Contact</a>
       </nav>
       <p className="site-footer-source">

@@ -60,6 +60,10 @@ export const user_fs_entitlement = pgTable('user_fs_entitlement', {
  expiration: timestamp('expiration'),
  /** Next charge; null once renewal is cancelled. */
  renewalDate: timestamp('renewal_date'),
+ creditCutoffAt: timestamp('credit_cutoff_at').notNull().defaultNow(),
+ creditCents: integer('credit_cents').notNull().default(0),
+ refundedCreditCents: integer('refunded_credit_cents').notNull().default(0),
+ revoked: boolean('revoked').notNull().default(false),
  isCanceled: boolean('is_canceled').notNull(),
  createdAt: timestamp('created_at').notNull(),
 }, (t) => [index('user_fs_entitlement_user_idx').on(t.userId)]);

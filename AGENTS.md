@@ -5,7 +5,7 @@
 ### 1. Premium features — how to identify them
 
 Premium features are gated by `requirePlan()` in `lib/swap-api.ts`, which returns
-**402** without an active Freemius subscription. Free routes don't call it.
+**402** without a positive prepaid credit balance. Free routes don't call it.
 
 | Premium feature | Entry point | Gated by |
 | --- | --- | --- |
@@ -17,13 +17,13 @@ reports unlimited access and the MadeByCue key pays.
 
 ### 2. Paywalling premium features with Freemius
 
-1. **Sell**: `SubscribeButton` POSTs `/api/billing/checkout` and opens the hosted
+1. **Sell**: `CreditPacks` POSTs `/api/billing/checkout` and opens the hosted
    Freemius checkout (sandbox while `FREEMIUS_SANDBOX` isn't `false`).
 2. **Sync**: the checkout redirect (`/api/billing/redirect`) and webhooks
    (`/api/webhooks/freemius`) re-fetch the license from Freemius and upsert
    `user_fs_entitlement`. Freemius stays the source of truth.
-3. **Gate**: `planStatus()` picks the active subscription for `FREEMIUS_PLAN_ID`
-   and counts seconds used since the billing month started. No entitlement → 402.
+3. **Gate**: `planStatus()` sums one-time credit grants minus purchase refunds and video spend.
+   Legacy grants are frozen at migration time. Empty balance → 402.
 
 All Freemius SDK calls are server-side; the keys come from env only.
 
@@ -38,7 +38,10 @@ All Freemius SDK calls are server-side; the keys come from env only.
 | Entitlement mirror table | `lib/db/schema.ts` (`user_fs_entitlement`) |
 
 Env (server-only, git-ignored): `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`,
-`FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_PLAN_ID`, `FREEMIUS_SANDBOX`.
+`FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_TOPUP_PLAN_ID`, `FREEMIUS_PRICING_ID_TOPUP_{10,25,50,100}`, `FREEMIUS_SANDBOX`.
+Retain `FREEMIUS_PLAN_ID` and `MONTHLY_CREDIT_USD` only for legacy credit preservation.
+Credit packs add 10/25/50/100 credits for $12.20/$30.50/$61/$122 USD before tax.
+The price includes the 22% service fee; Freemius adds applicable taxes.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -124,3 +124,7 @@
 .auth-card .auth-code { font-size: 24px; text-align: center; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
 .auth-card .button-link:disabled { opacity: .5; cursor: not-allowed; }
 .auth-card .local-sign-in-code { padding: 10px; border: 1px dashed #6b7687; border-radius: 10px; color: #bdd5f0; }
+
+.credit-pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 16px; margin: 20px 0; }
+.credit-pack-grid .price-card { width: auto; margin: 0; padding: 24px; }
+.credit-packs { width: 100%; }

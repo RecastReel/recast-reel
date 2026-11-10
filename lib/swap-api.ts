@@ -42,7 +42,7 @@ async function requirePlan(
   executor?: Parameters<typeof planStatus>[1],
 ) {
   const plan = await planStatus(userId, executor);
-  if (!plan.active) throw new HttpError("Subscribe to start swapping.", 402);
+  if (!plan.active) throw new HttpError("Add credits to start creating.", 402);
   return plan;
 }
 const uploadToken = (userId: string, key: string, mime: string) =>

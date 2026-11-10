@@ -43,6 +43,13 @@
       "when": 1792613369030,
       "tag": "0005_delete_video",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794318762867,
+      "tag": "0006_rare_mystique",
+      "breakpoints": true
     }
   ]
 }

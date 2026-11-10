@@ -30,7 +30,7 @@ import {
   type UploadedMedia,
 } from "../../lib/swap-client";
 import { taskDisplay } from "../../lib/task-status";
-import { SubscribeButton } from "../billing-buttons";
+import { CreditPacks } from "../billing-buttons";
 import { TaskTimer } from "./task-timer";
 import { TrimDialog } from "./trim-dialog";
 import "../swap.css";
@@ -80,12 +80,10 @@ const fromFile = (file: File): Pick => ({
 
 export function Studio({
   initialPlan,
-  price,
-  subscribed,
+  purchased,
 }: {
   initialPlan: PlanStatus;
-  price: number;
-  subscribed: boolean;
+  purchased: boolean;
 }) {
   const [plan, setPlan] = useState(initialPlan);
   const [mode, setMode] = useState<Mode>("swap");
@@ -133,21 +131,18 @@ export function Studio({
   }, []);
   // Right after checkout the webhook may land a moment later; poll briefly.
   useEffect(() => {
-    if (!subscribed || plan.active) return;
+    if (!purchased) return;
     let tries = 0;
     const timer = setInterval(() => {
       if (++tries > 20) return clearInterval(timer);
       void swapApi<{ plan: PlanStatus }>("me")
         .then((d) => {
-          if (d.plan.active) {
-            setPlan(d.plan);
-            clearInterval(timer);
-          }
+          setPlan(d.plan);
         })
         .catch(() => {});
     }, 3000);
     return () => clearInterval(timer);
-  }, [subscribed, plan.active]);
+  }, [purchased]);
 
   // Check unfinished videos, backing off while the tab is hidden. A failed
   // check is retried on the next tick; coming back to the tab or back
@@ -385,24 +380,16 @@ export function Studio({
             <h1>What are you making today?</h1>
             {plan.billing && plan.active && (
               <p className="credits-left">
-                {credits(plan.remainingCents)} left
+                {credits(plan.remainingCents)} left · <a href="/account">Add credits</a>
               </p>
             )}
           </section>
           <section className="composer-stage" aria-label="Composer">
             {!plan.active ? (
               <div className="paywall">
-                <strong>
-                  ${price}/month · {credits(plan.creditCents)} every month
-                </strong>
-                <p>
-                  {subscribed
-                    ? "Confirming your subscription… this takes a few seconds."
-                    : "Videos that fail give their credits back. Cancel anytime."}
-                </p>
-                {!subscribed && (
-                  <SubscribeButton label="Subscribe to start" />
-                )}
+                <strong>Add credits to start creating</strong>
+                <p>{purchased ? 'Your payment is being confirmed. If your balance has not updated, refresh shortly or contact support.' : 'Buy credits once and use them whenever you need.'}</p>
+                <CreditPacks />
               </div>
             ) : (
               <>

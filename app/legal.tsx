@@ -3,7 +3,7 @@ import { SiteFooter } from './site-footer';
 import { SiteHeader } from './site-header';
 import './site.css';
 
-export const LEGAL_UPDATED = 'October 19, 2026';
+export const LEGAL_UPDATED = 'November 10, 2026';
 export const CONTACT = 'support@recastreel.com';
 
 export async function LegalPage({ title, children }: { title: string; children: React.ReactNode }) {

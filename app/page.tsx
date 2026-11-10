@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { FAQ, SHOWCASE } from '../lib/catalog';
-import { credits } from '../lib/options';
-import { PLAN } from '../lib/plan';
+import { CreditPacks } from './billing-buttons';
 import { currentSession } from '../lib/session';
 import { ShowcaseCard } from './showcase';
 import { SiteFooter } from './site-footer';
@@ -43,17 +42,9 @@ export default async function Landing() {
     </section>
 
     <section id="pricing" className="section" aria-labelledby="pricing-title">
-     <h2 id="pricing-title">One simple plan</h2>
-     <div className="price-card">
-      <div className="price"><strong>${PLAN.priceUsd}</strong><span>/month</span></div>
-      <p className="price-lead">{credits(PLAN.creditCents)} every month</p>
-      <ul>
-       <li>Character swaps for any video from 40 seconds to 10 minutes</li>
-       <li>Video generation</li>
-       <li>Customer support</li>
-      </ul>
-      <Link href={start} className="button-primary">{session ? 'Open studio' : 'Get started'}</Link>
-     </div>
+     <h2 id="pricing-title">Pay as you go</h2>
+     <p className="section-note">Buy video credits when you need them. No monthly payments.</p>
+     <CreditPacks signedIn={Boolean(session)} />
     </section>
 
     <section className="section" aria-labelledby="faq-title">

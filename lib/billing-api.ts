@@ -1,5 +1,6 @@
 import type { WebhookEventType } from '@freemius/sdk';
 import { NextRequest, NextResponse } from 'next/server';
+import { creditPack } from './credit-packs';
 import { appUrl, billingEnabled } from './config';
 import { checkoutLink, deleteLicense, freemius, portalLink, processCheckoutRedirect, syncLicense } from './freemius';
 import { sessionFor } from './session';
@@ -15,8 +16,15 @@ export async function handleBillingLink(req: NextRequest, kind: 'checkout' | 'po
  const session = await sessionFor(req.headers);
  if (!session) return json({ error: 'Sign in to continue.' }, 401);
  try {
-  const url = kind === 'checkout' ? await checkoutLink(session.user.email) : await portalLink(session.user.email);
-  if (!url) return json({ error: 'No billing account yet. Subscribe first.' }, 404);
+  let amount: number | undefined;
+  if (kind === 'checkout') {
+   const payload = await req.json().catch(() => null);
+   const pack = creditPack(payload?.amount);
+   if (!pack) return json({ error: 'Choose a $10, $25, $50, or $100 credit pack.' }, 400);
+   amount = pack.usd;
+  }
+  const url = kind === 'checkout' ? await checkoutLink(session.user.email, amount!) : await portalLink(session.user.email);
+  if (!url) return json({ error: 'No billing account yet. Purchase credits first.' }, 404);
   return json({ url });
  } catch (error) {
   console.error(`[freemius] ${kind} link failed`, error);
@@ -33,7 +41,7 @@ export async function handleCheckoutRedirect(req: NextRequest) {
   // Webhooks still sync the purchase; the studio waits for it.
   console.error('[freemius] checkout redirect failed', error);
  }
- return NextResponse.redirect(`${appUrl()}/studio?subscribed=1`, 303);
+ return NextResponse.redirect(`${appUrl()}/studio?purchased=1`, 303);
 }
 
 const LICENSE_EVENTS: WebhookEventType[] = [
@@ -45,6 +53,24 @@ const LICENSE_EVENTS: WebhookEventType[] = [
 /** POST /api/webhooks/freemius: verified license lifecycle events. Every event
  * re-fetches the license from Freemius, so there's one sync path. */
 export async function handleFreemiusWebhook(req: Request) {
+ const raw = await req.clone().text();
+ const verifier = freemius().webhook.createListener();
+ if (!verifier.verifySignature(raw, req.headers.get('x-signature'))) return json({ error: 'Invalid signature.' }, 401);
+ try {
+  const event = JSON.parse(raw);
+  if (typeof event.type === 'string' && /^(payment|refund|chargeback)\./.test(event.type)) {
+   const paymentId = event.objects?.payment?.id ?? event.data?.payment_id;
+   if (!paymentId) return json({ error: 'Payment ID missing.' }, 400);
+   const payment = await freemius().api.payment.retrieve(String(paymentId));
+   if (!payment?.license_id) throw new Error('Payment license missing');
+   await syncLicense(String(payment.license_id));
+   return json({ success: true });
+  }
+ } catch (error) {
+  console.error('[freemius] payment sync failed', error);
+  return json({ error: 'Payment sync failed.' }, 500);
+ }
+
  const listener = freemius().webhook.createListener({
   onError: async (error) => console.error('[freemius] webhook failed', error),
  });

@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { credits } from '../../lib/options';
-import { PLAN } from '../../lib/plan';
 import { CONTACT, LegalPage } from '../legal';
 
 export const metadata: Metadata = { title: 'Terms of Service · Recast Reel' };
@@ -15,15 +13,17 @@ export default function Terms() {
    <h2>1. Who can use Recast Reel</h2>
    <p>You must be at least 18 and able to enter a binding contract. You’re responsible for your account and for everything created with it. Keep access to your email secure, because sign-in codes are sent there.</p>
 
-   <h2>2. Subscription and credits</h2>
+   <h2>2. Pay-as-you-go credits</h2>
    <ul>
-    <li>Recast Reel costs ${PLAN.priceUsd} per month, plus any applicable taxes, and adds {credits(PLAN.creditCents)} to your balance each billing month. One credit is worth $1 of video.</li>
-    <li>Each video uses credits equal to our video provider’s price for it, shown before you start it. The final amount can be slightly higher or lower once the video is finished. Videos that fail, are cancelled or expire give their credits back.</li>
-    <li>Unused credits don’t expire and roll over to later months. You can spend them while your subscription is active; if you cancel, they are kept and become usable again when you resubscribe. Credits have no cash value and aren’t refundable.</li>
-    <li>Payments are processed by Freemius as merchant of record, and the subscription renews monthly until you cancel.</li>
-    <li>You can cancel anytime from your account page and keep access until the end of the period you paid for. Payments aren’t refunded for partial months, except where the law requires it.</li>
-    <li>We may change the price or monthly credits with at least 30 days’ notice. Changes apply from your next billing month.</li>
+    <li>Buy $10, $25, $50, or $100 USD in credits through one-time payments. One credit is worth US$1 of video. New purchases do not create a subscription or automatically renew.</li>
+    <li>A 22% service fee is added to the credit amount: $10 costs $12.20, $25 costs $30.50, $50 costs $61.00, and $100 costs $122.00, before tax. Applicable sales tax or VAT is calculated by Freemius on the checkout price, including the service fee, and displayed before payment.</li>
+    <li>Each video uses credits equal to our video provider’s price, shown before you start. The final amount may be slightly higher or lower once processing finishes. Failed, cancelled, or expired videos restore their credits.</li>
+    <li>Unused credits do not expire and do not require an active subscription. They cannot be transferred or redeemed for cash except for eligible refunds under our Refund Policy.</li>
+    <li>Payments and monetary refunds are processed by Freemius as merchant of record.</li>
+    <li>We may change prices for future purchases. Changes do not reduce your existing credit balance. If you have a legacy subscription, manage its renewal through the billing portal or contact us for help.</li>
    </ul>
+
+   <p>Our <Link href="/refunds">Refund Policy</Link> explains refunds for unused purchased credits, non-refundable consumed credits, and automatic credit restoration for failed generations.</p>
 
    <h2>3. Your content</h2>
    <p>You keep ownership of what you upload (videos, images and prompts) and of the videos you create, as far as the law allows. You give us a limited licence to store and process that content only to provide the service to you. Uploads and finished videos are deleted after 7 days, so download what you want to keep.</p>
@@ -46,7 +46,7 @@ export default function Terms() {
    <p>Videos are made by AI models and can be inaccurate, inconsistent or unexpected. You decide how to use what you create and you’re responsible for it. Similar prompts from other users can produce similar results.</p>
 
    <h2>6. Availability</h2>
-   <p>We work to keep Recast Reel running well, but the service is provided “as is” and “as available”. We don’t guarantee it will be uninterrupted, error-free, or finish within any particular time. We may change or discontinue features. If we shut down the service, we’ll give notice and refund any prepaid, unused subscription period.</p>
+   <p>We work to keep Recast Reel running well, but the service is provided “as is” and “as available”. We don’t guarantee it will be uninterrupted, error-free, or finish within any particular time. We may change or discontinue features. If we shut down the service, we’ll give notice and refund eligible unused purchased credits.</p>
 
    <h2>7. Liability</h2>
    <p>To the extent the law allows, Recast Reel is not liable for indirect, incidental, special or consequential damages, or for lost profits, data or goodwill. Our total liability for any claim is limited to the amount you paid us in the 3 months before the claim. Nothing in these terms limits liability that cannot be limited by law, or your rights as a consumer.</p>

@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { localMode } from '../../lib/config';
 import { credits } from '../../lib/options';
-import { PLAN, planStatus } from '../../lib/plan';
+import { planStatus } from '../../lib/plan';
 import { currentSession } from '../../lib/session';
-import { ManageBillingButton, SignOutButton, SubscribeButton } from '../billing-buttons';
+import { ManageBillingButton, SignOutButton, CreditPacks } from '../billing-buttons';
 import { SiteHeader } from '../site-header';
 import '../site.css';
 
@@ -14,7 +14,6 @@ export default async function Account() {
  const session = await currentSession();
  if (!session) redirect('/login?next=/account');
  const plan = await planStatus(session.user.id);
- const date = plan.periodEnd ? new Date(plan.periodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : null;
  return (
   <div className="site">
    <SiteHeader signedIn />
@@ -28,20 +27,17 @@ export default async function Account() {
      </>}
     </section>
     <section className="panel">
-     <h2>Plan</h2>
+     <h2>Credits · pay as you go</h2>
      {!plan.billing ? <>
       <p className="muted">Running locally with billing off. Videos are charged to the MadeByCue API key in CUE_API_KEY.</p>
       <div className="panel-actions"><Link href="/studio" className="button-primary">Open studio</Link></div>
-     </> : plan.active ? <>
-      <p>Recast Reel · ${PLAN.priceUsd}/month{date && <><br /><span className="muted">{plan.cancelAtPeriodEnd ? `Ends on ${date}` : `Renews on ${date}`}</span></>}</p>
-      <div className="usage">
-       <p><strong>{credits(plan.remainingCents)} left</strong><br /><span className="muted">{credits(plan.creditCents)} added every month. Credits don’t expire.</span></p>
-      </div>
-      <div className="panel-actions"><Link href="/studio" className="button-primary">Open studio</Link><ManageBillingButton /></div>
      </> : <>
-      <p className="muted">No active plan. Subscribe for {credits(PLAN.creditCents)} every month.</p>
-      <div className="panel-actions"><SubscribeButton label={`Subscribe · $${PLAN.priceUsd}/month`} /></div>
+      <p><strong>{credits(plan.remainingCents)} left</strong></p>
+      <p className="muted">Top up whenever you need. Your credits don’t expire.</p>
+      <CreditPacks />
+      <div className="panel-actions"><Link href="/studio" className="button-quiet">Open studio</Link><ManageBillingButton /></div>
      </>}
+
     </section>
    </main>
   </div>
