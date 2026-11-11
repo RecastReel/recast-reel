@@ -32,7 +32,12 @@ export function MonthlyPlanCard({ signedIn = true }: { signedIn?: boolean }) {
   <h3>Pro</h3>
   <div className="price"><strong>${MONTHLY_PRICE_USD}</strong><span> USD / month</span></div>
   <p className="price-lead">{MONTHLY_CREDITS} credits each paid month</p>
-  <p className="credit-pack-fee">Applicable tax added at checkout.</p>
+  <ul>
+   <li>Video generation up to 15 seconds</li>
+   <li>Character swaps on videos up to 10 minutes long</li>
+   <li>7 days to download finished videos</li>
+   <li>Customer support by email</li>
+  </ul>
   {signedIn ? <button className="button-primary" disabled={busy} onClick={() => void subscribe()}>{busy ? 'Opening checkout…' : 'Subscribe'}</button> : <Link className="button-primary" href="/login?next=/account">Get started</Link>}
   {error && <p className="form-error" role="alert">{error}</p>}
  </div>;
