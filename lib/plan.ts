@@ -1,4 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
+import { monthlyPlanId } from './monthly-plan';
 import { billingEnabled } from './config';
 import { getDb, type Db } from './db';
 import { swaps, user_fs_entitlement } from './db/schema';
@@ -43,11 +44,13 @@ export async function planStatus(userId: string, executor?: Pick<Db, 'select'>):
  const [used] = await db.select({ cents: sql<number>`coalesce(sum(${swaps.costCents}), 0)::int` }).from(swaps)
   .where(and(eq(swaps.userId, userId), eq(swaps.refunded, false)));
  const usedCents = Number(used?.cents ?? 0);
+ const monthly = rows.find((row) => row.fsPlanId === monthlyPlanId() && row.type === 'subscription' && !row.revoked &&
+  (row.expiration ?? row.renewalDate ?? new Date(0)) > new Date());
  return {
   billing: true,
   active: granted > usedCents,
-  cancelAtPeriodEnd: false,
-  periodEnd: null,
+  cancelAtPeriodEnd: monthly?.isCanceled ?? false,
+  periodEnd: (monthly?.expiration ?? monthly?.renewalDate)?.toISOString() ?? null,
   creditCents: granted,
   usedCents,
   remainingCents: Math.max(0, granted - usedCents),

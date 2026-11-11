@@ -30,7 +30,8 @@ import {
   type UploadedMedia,
 } from "../../lib/swap-client";
 import { taskDisplay } from "../../lib/task-status";
-import { CreditPacks } from "../billing-buttons";
+import { MONTHLY_CREDITS } from "../../lib/monthly-plan";
+import { MonthlyPlanCard } from "../billing-buttons";
 import { TaskTimer } from "./task-timer";
 import { TrimDialog } from "./trim-dialog";
 import "../swap.css";
@@ -380,7 +381,7 @@ export function Studio({
             <h1>What are you making today?</h1>
             {plan.billing && plan.active && (
               <p className="credits-left">
-                {credits(plan.remainingCents)} left · <a href="/account">Add credits</a>
+                {credits(plan.remainingCents)} left · <a href="/account">Manage credits</a>
               </p>
             )}
           </section>
@@ -388,8 +389,8 @@ export function Studio({
             {!plan.active ? (
               <div className="paywall">
                 <strong>Add credits to start creating</strong>
-                <p>{purchased ? 'Your payment is being confirmed. If your balance has not updated, refresh shortly or contact support.' : 'Buy credits once and use them whenever you need.'}</p>
-                <CreditPacks />
+                <p>{purchased ? 'Your payment is being confirmed. If your balance has not updated, refresh shortly or contact support.' : plan.periodEnd ? `You’ve used your available credits. Your next payment adds ${MONTHLY_CREDITS} more.` : `Subscribe to get ${MONTHLY_CREDITS} credits each paid month.`}</p>
+                {plan.periodEnd ? <a href="/account">Manage billing</a> : <MonthlyPlanCard />}
               </div>
             ) : (
               <>

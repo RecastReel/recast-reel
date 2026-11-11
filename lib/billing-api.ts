@@ -1,8 +1,8 @@
 import type { WebhookEventType } from '@freemius/sdk';
 import { NextRequest, NextResponse } from 'next/server';
-import { creditPack } from './credit-packs';
 import { appUrl, billingEnabled } from './config';
 import { checkoutLink, deleteLicense, freemius, portalLink, processCheckoutRedirect, syncLicense } from './freemius';
+import { planStatus } from './plan';
 import { sessionFor } from './session';
 
 const json = (body: unknown, status = 200) =>
@@ -16,14 +16,9 @@ export async function handleBillingLink(req: NextRequest, kind: 'checkout' | 'po
  const session = await sessionFor(req.headers);
  if (!session) return json({ error: 'Sign in to continue.' }, 401);
  try {
-  let amount: number | undefined;
-  if (kind === 'checkout') {
-   const payload = await req.json().catch(() => null);
-   const pack = creditPack(payload?.amount);
-   if (!pack) return json({ error: 'Choose a $10, $25, $50, or $100 credit pack.' }, 400);
-   amount = pack.usd;
-  }
-  const url = kind === 'checkout' ? await checkoutLink(session.user.email, amount!) : await portalLink(session.user.email);
+  if (kind === 'checkout' && (await planStatus(session.user.id)).periodEnd)
+   return json({ error: 'You already have a monthly plan. Manage it from your account.' }, 409);
+  const url = kind === 'checkout' ? await checkoutLink(session.user.email) : await portalLink(session.user.email);
   if (!url) return json({ error: 'No billing account yet. Purchase credits first.' }, 404);
   return json({ url });
  } catch (error) {

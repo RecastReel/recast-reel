@@ -77,14 +77,23 @@
 .auth-switch a { color: #ddd; text-decoration: underline; }
 .form-error { margin: 0; color: #e9a6a6; font-size: 12px; }
 
-.account { max-width: 560px; margin: 0 auto; padding: 40px 24px 64px; }
-.account h1 { margin: 0 0 20px; font-size: 22px; font-weight: 500; }
+.account { display: grid; gap: 20px; max-width: 640px; margin: 0 auto; padding: clamp(28px, 6vw, 56px) clamp(16px, 4vw, 32px) 64px; }
+.account h1 { margin: 0; font-size: 22px; font-weight: 500; }
 .panel { margin-bottom: 16px; padding: 22px; border: 1px solid #2f2f2f; border-radius: 20px; background: #1d1d1d; }
 .panel h2 { margin: 0 0 10px; color: #999; font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: .6px; }
 .panel p { margin: 0 0 14px; font-size: 14px; line-height: 1.6; }
 .muted { color: #999; }
 .usage p { margin-top: 10px; color: #bbb; font-size: 13px; }
-.panel-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.panel-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.account .panel { display: grid; gap: 16px; margin: 0; padding: clamp(18px, 4vw, 28px); }
+.account .panel h2, .account .panel > p { margin: 0; }
+.account-profile { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 20px; }
+.account-profile p { margin: 0; overflow-wrap: anywhere; }
+.account-balance { display: grid; gap: 4px; }
+.account-balance strong { font-size: 22px; font-weight: 500; }
+.account-balance p { margin: 0; }
+.account .price-card { width: 100%; max-width: none; margin: 0; padding: clamp(18px, 4vw, 28px); }
+.account .panel-actions { padding-top: 4px; }
 
 @media (max-width: 720px) {
  .site-header { padding: 14px 16px; }

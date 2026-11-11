@@ -2,7 +2,8 @@ import { Freemius, type PurchaseInfo, type PaymentEntity } from '@freemius/sdk';
 import { eq, sql } from 'drizzle-orm';
 import { appUrl } from './config';
 import { getDb } from './db';
-import { creditPack, packPricingId, packForPricing, topupPlanId } from './credit-packs';
+import { packForPricing, topupPlanId } from './credit-packs';
+import { MONTHLY_CREDITS, MONTHLY_PRICE_USD, PRO_PLAN_ID, PRO_PRICING_ID, monthlyPlanId } from './monthly-plan';
 import { refundedCredits } from './purchase-credits';
 import { user, user_fs_entitlement } from './db/schema';
 
@@ -29,19 +30,18 @@ export function freemius() {
 // while testing. Only FREEMIUS_SANDBOX=false opens the live checkout.
 export const isSandbox = () => process.env.FREEMIUS_SANDBOX !== 'false';
 
-/** Hosted one-time credit checkout. All prices are configured in Freemius. */
-export async function checkoutLink(email: string, amount: number) {
- const pack = creditPack(amount);
- const planId = topupPlanId();
- const pricingId = pack && packPricingId(amount);
- if (!pack || !planId || !pricingId) throw new Error('Credit packs are not configured');
+/** Verify the hosted checkout price before sending a customer to Freemius. */
+export async function checkoutLink(email: string) {
+ const planId = monthlyPlanId();
+ if (!planId || planId === topupPlanId() || planId === process.env.FREEMIUS_PLAN_ID)
+  throw new Error('A distinct monthly Freemius plan must be configured');
  const data = await freemius().api.product.retrievePricingData();
- const pricing = data?.plans?.find((plan) => String(plan.id) === planId)?.pricing?.find((price) => String(price.id) === pricingId);
- if (!pricing || pricing.currency?.toLowerCase() !== 'usd' || pricing.licenses !== amount ||
-  Math.round((pricing.lifetime_price ?? 0) * 100) !== pack.totalCents || pricing.monthly_price != null || pricing.annual_price != null)
-  throw new Error('Freemius credit pricing must match the displayed one-time USD total');
- const checkout = await freemius().checkout.create({ user: { email }, planId, quota: amount, isSandbox: isSandbox(), withRecommendation: false });
- return checkout.setUser({ email }, true).setPricing(pricingId).setBillingCycle('lifetime').setCurrency('usd').setTrial(false)
+ const pricing = data?.plans?.find((plan) => String(plan.id) === planId)?.pricing?.find((price) =>
+  price.id && (planId !== PRO_PLAN_ID || String(price.id) === PRO_PRICING_ID) && price.currency?.toLowerCase() === 'usd' && price.licenses === 1 &&
+  price.monthly_price === MONTHLY_PRICE_USD && price.lifetime_price == null && price.annual_price == null);
+ if (!pricing?.id) throw new Error('Freemius pricing must match the displayed monthly USD price');
+ const checkout = await freemius().checkout.create({ user: { email }, planId, quota: 1, isSandbox: isSandbox(), withRecommendation: false });
+ return checkout.setUser({ email }, true).setPricing(pricing.id).setBillingCycle('monthly').setCurrency('usd').setTrial(false)
   .setCancelButton(`${appUrl()}/account`).getLink();
 }
 
@@ -64,28 +64,34 @@ async function savePurchase(purchase: PurchaseInfo) {
  const pack = packForPricing(purchase.pricingId);
  const topup = purchase.planId === topupPlanId() && purchase.isOneOff() && pack;
  if (topup && purchase.quota !== topup.usd) throw new Error('Unexpected credit pack quota');
- if (!topup && purchase.planId !== process.env.FREEMIUS_PLAN_ID) throw new Error('Unrecognized Freemius plan or pricing');
+ const monthly = purchase.planId === monthlyPlanId() && purchase.isMonthly();
+ if (!topup && !monthly && purchase.planId !== process.env.FREEMIUS_PLAN_ID) throw new Error('Unrecognized Freemius plan or pricing');
  const record = purchase.toEntitlementRecord({ renewalDate: purchase.renewalDate });
  await db.transaction(async (tx) => {
   // Same lock as video reservations, so refunds and spending cannot race.
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${owner.id}))`);
   let refundedCreditCents = 0;
-  if (topup) {
+  let creditCents = topup ? topup.creditCents : 0;
+  if (topup || monthly) {
    const payments: PaymentEntity[] = [];
    for (let offset = 0; ; offset += 100) {
     const page = await freemius().api.user.retrievePayments(purchase.userId, { filter: 'all' }, { count: 100, offset });
     payments.push(...page.filter((p) => String(p.license_id) === purchase.licenseId));
     if (page.length < 100) break;
    }
-   refundedCreditCents = refundedCredits(topup.creditCents, payments);
+   if (monthly) {
+    const paidIds = new Set(payments.filter((payment) => payment.type === 'payment' && payment.id &&
+     Number(payment.gross) > 0).map((payment) => String(payment.id)));
+    creditCents = paidIds.size * MONTHLY_CREDITS * 100;
+   }
+   if (creditCents > 0 || topup) refundedCreditCents = refundedCredits(creditCents, payments);
   }
-  const creditCents = topup ? topup.creditCents : 0;
   await tx.insert(user_fs_entitlement)
    .values({ ...record, userId: owner.id, expiration: purchase.expiration, createdAt: purchase.created, creditCents, refundedCreditCents, revoked: Boolean(topup && purchase.canceled) })
    .onConflictDoUpdate({
     target: user_fs_entitlement.fsLicenseId,
-    // Never reset a deletion tombstone or change the original credit grant.
-    set: { ...record, createdAt: purchase.created, expiration: purchase.expiration, refundedCreditCents, revoked: sql`${user_fs_entitlement.revoked} or ${Boolean(topup && purchase.canceled)}` },
+    // Preserve one-off grants and deletion tombstones on replay.
+    set: { ...record, ...(monthly ? { creditCents } : {}), createdAt: purchase.created, expiration: purchase.expiration, refundedCreditCents, revoked: sql`${user_fs_entitlement.revoked} or ${Boolean(topup && purchase.canceled)}` },
    });
  });
 }

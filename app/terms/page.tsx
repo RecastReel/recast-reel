@@ -1,3 +1,4 @@
+import { MONTHLY_CREDITS, MONTHLY_PRICE_USD } from '../../lib/monthly-plan';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CONTACT, LegalPage } from '../legal';
@@ -13,14 +14,13 @@ export default function Terms() {
    <h2>1. Who can use Recast Reel</h2>
    <p>You must be at least 18 and able to enter a binding contract. You’re responsible for your account and for everything created with it. Keep access to your email secure, because sign-in codes are sent there.</p>
 
-   <h2>2. Pay-as-you-go credits</h2>
+   <h2>2. Subscription and credits</h2>
    <ul>
-    <li>Buy $10, $25, $50, or $100 USD in credits through one-time payments. One credit is worth US$1 of video. New purchases do not create a subscription or automatically renew.</li>
-    <li>A 22% service fee is added to the credit amount: $10 costs $12.20, $25 costs $30.50, $50 costs $61.00, and $100 costs $122.00, before tax. Applicable sales tax or VAT is calculated by Freemius on the checkout price, including the service fee, and displayed before payment.</li>
+    <li>The subscription costs US${MONTHLY_PRICE_USD} per month plus applicable taxes and renews monthly until canceled. Each successful monthly payment adds {MONTHLY_CREDITS} credits. One credit is worth US$1 of video.</li>
     <li>Each video uses credits equal to our video provider’s price, shown before you start. The final amount may be slightly higher or lower once processing finishes. Failed, cancelled, or expired videos restore their credits.</li>
     <li>Unused credits do not expire and do not require an active subscription. They cannot be transferred or redeemed for cash except for eligible refunds under our Refund Policy.</li>
     <li>Payments and monetary refunds are processed by Freemius as merchant of record.</li>
-    <li>We may change prices for future purchases. Changes do not reduce your existing credit balance. If you have a legacy subscription, manage its renewal through the billing portal or contact us for help.</li>
+    <li>We may change prices for future purchases. Changes do not reduce your existing credit balance. Manage your subscription and renewal through the billing portal or contact us for help.</li>
    </ul>
 
    <p>Our <Link href="/refunds">Refund Policy</Link> explains refunds for unused purchased credits, non-refundable consumed credits, and automatic credit restoration for failed generations.</p>

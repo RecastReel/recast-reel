@@ -39,7 +39,7 @@ the services below to be configured. See `.env.example` for each setting.
 | [MadeByCue](https://www.madebycue.dev) | Making the videos      | `CUE_API_KEY`                                                                                                                   |
 | [Neon](https://neon.tech) (Postgres)   | Database               | `DATABASE_URL`                                                                                                                  |
 | [Resend](https://resend.com)           | Sign-in emails         | `RESEND_API_KEY`, `EMAIL_FROM`                                                                                                  |
-| [Freemius](https://freemius.com)       | One-time credit packs | `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`, `FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_SANDBOX` |
+| [Freemius](https://freemius.com)       | Monthly subscription | `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`, `FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY`, `FREEMIUS_SANDBOX` |
 | Better Auth                            | Sessions               | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`                                                                                         |
 
 Setup:
@@ -48,24 +48,10 @@ Setup:
    `DATABASE_URL` in the shell environment or in `.env.local`, then run
    `npm run db:migrate` against your Neon database.
 2. Verify your sending domain in Resend.
-3. In Freemius, create a dedicated **Credit Topup** SaaS plan with multi-unit pricing.
-   Set the unit label to Credit. Use only USD one-off prices; leave monthly and
-   annual prices empty. Do not reuse the old subscription plan.
-
-   | Quota / credits | Service fee (22%) | One-off price before tax |
-   | --- | --- | --- |
-   | 10 | $2.20 | $12.20 |
-   | 25 | $5.50 | $30.50 |
-   | 50 | $11.00 | $61.00 |
-   | 100 | $22.00 | $122.00 |
-
-   The verified plan ID (`78471`) and pricing IDs (`118288`–`118291`) are
-   included in `lib/credit-packs.ts`; no additional environment settings are needed.
-   Optional `FREEMIUS_TOPUP_PLAN_ID` and `FREEMIUS_PRICING_ID_TOPUP_*` overrides
-   support a different Freemius product or test configuration.
-   Checkout validates the USD price, quota, and absence of recurring prices.
-   The service fee is included in Freemius's configured product price, not an
-   additional tax. Freemius calculates applicable sales taxes on that total.
+3. Create a dedicated SaaS plan with a **US$99 monthly price** for one unit.
+   Leave annual and one-off pricing blank. Recast Reel uses Pro plan `78736` and pricing ID `118636` by default.
+   Set `FREEMIUS_MONTHLY_PLAN_ID` to use a different plan. Each successful monthly payment grants 80 credits. Retain the
+   old plan and pricing IDs for reconciliation of existing purchases.
 4. Set the webhook to `https://<your-domain>/api/webhooks/freemius`. Enable
    `license.created`, `license.updated`, `license.extended`, `license.shortened`,
    `license.cancelled`, `license.expired`, `license.plan.changed`, `license.deleted`,
@@ -86,7 +72,7 @@ Setup:
    any unused prepaid period; changing this app does not cancel external charges.
    Disable the legacy plan for new sales. Keep billing portal access for invoices
    and any remaining legacy subscription administration.
-7. Test all four sandbox purchases, a repeat purchase of the same pack, webhook
+7. Test a sandbox subscription purchase, renewal, webhook
    replay, a partial refund, and a failed video. `FREEMIUS_SANDBOX` defaults to true;
    set it to false only when the live plan/prices and webhook configuration match.
 8. Build and start with `npm run build` and `npm start`.

@@ -107,12 +107,31 @@ test('prepaid billing lifecycle in an isolated database', async (t) => {
   });
   await t.test('checkout rejects mismatched recurring prices', async () => {
    sdk.api.product.retrievePricingData = async () => ({ plans: [{ id: 'topup', is_free_localhost: false, is_block_features: false, is_block_features_monthly: false, license_type: 0, pricing: [{ id: 'pricing-25', licenses: 25, currency: 'usd', lifetime_price: 30.5, monthly_price: 25 }] }] });
-   await assert.rejects(checkoutLink('buyer@example.com', 25), /must match/);
+   process.env.FREEMIUS_MONTHLY_PLAN_ID = 'monthly';
+   await assert.rejects(checkoutLink('buyer@example.com'), /must match/);
   });
   await t.test('forged webhook is rejected before any credit is changed', async () => {
    const result = await handleFreemiusWebhook(new Request('http://localhost/api/webhooks/freemius', { method: 'POST', body: JSON.stringify({ type: 'payment.created', data: { payment_id: 'fake' } }) }));
    assert.equal(result.status, 401);
    assert.equal((await planStatus('buyer')).remainingCents, 8000);
+  });
+  await t.test('monthly payments grant 80 credits once each and preserve prior credits', async () => {
+   const subscription = 'monthly-license';
+   sdk.purchase.retrievePurchase = async () => ({
+    email: 'buyer@example.com', userId: 'fs-user', licenseId: subscription,
+    planId: 'monthly', pricingId: 'monthly-price', created, expiration: null, renewalDate: null,
+    isOneOff: () => false, isMonthly: () => true,
+    toEntitlementRecord: () => ({ fsLicenseId: subscription, fsPlanId: 'monthly', fsPricingId: 'monthly-price',
+     fsUserId: 'fs-user', type: 'subscription', isCanceled: false, createdAt: created }),
+   } as unknown as PurchaseInfo);
+   const first = { ...payment('payment', 99, subscription), id: '1001' };
+   payments = [first, first];
+   await syncLicense(subscription);
+   assert.equal((await planStatus('buyer')).remainingCents, 16000);
+   payments.push({ ...first, id: '1002', is_renewal: true });
+   await syncLicense(subscription);
+   await syncLicense(subscription);
+   assert.equal((await planStatus('buyer')).remainingCents, 24000);
   });
  } finally {
   await (db as unknown as { $client: { close(): Promise<void> } }).$client.close();

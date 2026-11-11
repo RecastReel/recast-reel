@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { FAQ, SHOWCASE } from '../lib/catalog';
-import { CreditPacks } from './billing-buttons';
+import { MonthlyPlanCard } from './billing-buttons';
 import { currentSession } from '../lib/session';
 import { ShowcaseCard } from './showcase';
 import { SiteFooter } from './site-footer';
@@ -42,9 +42,9 @@ export default async function Landing() {
     </section>
 
     <section id="pricing" className="section" aria-labelledby="pricing-title">
-     <h2 id="pricing-title">Pay as you go</h2>
-     <p className="section-note">Buy video credits when you need them. No monthly payments.</p>
-     <CreditPacks signedIn={Boolean(session)} />
+     <h2 id="pricing-title">Monthly plan</h2>
+     <p className="section-note">Generate videos and swap characters.</p>
+     <MonthlyPlanCard signedIn={Boolean(session)} />
     </section>
 
     <section className="section" aria-labelledby="faq-title">
