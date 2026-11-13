@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { showSignInCodes } from '../../lib/config';
 import { currentSession } from '../../lib/session';
 import { AuthForm } from '../auth-form';
+import { LogoMark } from '../logo';
 import { SiteHeader } from '../site-header';
 import '../site.css';
 
@@ -13,7 +14,7 @@ export default async function Page() {
  return (
   <div className="site">
    <SiteHeader signedIn={false} />
-   <main className="auth-main"><Suspense><AuthForm showCodes={showSignInCodes()} /></Suspense></main>
+   <main className="auth-main"><LogoMark size={44} /><Suspense><AuthForm showCodes={showSignInCodes()} /></Suspense></main>
   </div>
  );
 }

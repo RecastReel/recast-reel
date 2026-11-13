@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 import { MONTHLY_CREDITS, MONTHLY_PRICE_USD } from '../lib/monthly-plan';
 import { authClient } from '../lib/auth-client';
 
@@ -17,6 +18,8 @@ async function openBillingLink(kind: 'checkout' | 'portal', fallback: string) {
   return fallback;
  }
 }
+
+const PLAN_FEATURES = ['Video generation up to 15 seconds', 'Character swaps on videos up to 10 minutes long', '7 days to download finished videos', 'Customer support by email'];
 
 export function MonthlyPlanCard({ signedIn = true }: { signedIn?: boolean }) {
  const [busy, setBusy] = useState(false);
@@ -33,10 +36,7 @@ export function MonthlyPlanCard({ signedIn = true }: { signedIn?: boolean }) {
   <div className="price"><strong>${MONTHLY_PRICE_USD}</strong><span> USD / month</span></div>
   <p className="price-lead">{MONTHLY_CREDITS} credits each paid month</p>
   <ul>
-   <li>Video generation up to 15 seconds</li>
-   <li>Character swaps on videos up to 10 minutes long</li>
-   <li>7 days to download finished videos</li>
-   <li>Customer support by email</li>
+   {PLAN_FEATURES.map((f) => <li key={f}><Check size={16} aria-hidden="true" />{f}</li>)}
   </ul>
   {signedIn ? <button className="button-primary" disabled={busy} onClick={() => void subscribe()}>{busy ? 'Opening checkout…' : 'Subscribe'}</button> : <Link className="button-primary" href="/login?next=/account">Get started</Link>}
   {error && <p className="form-error" role="alert">{error}</p>}
