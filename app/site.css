@@ -90,9 +90,16 @@
 .mock-row-end .mock-go { margin-left: 0; }
 .mock-go.is-ready { background: var(--ink); color: var(--on-ink); }
 .mock-card { display: flex; flex-direction: column; gap: 8px; padding: 6px 6px 10px; border-radius: 14px; background: var(--surface); }
-.mock-card img, .mock-pending { display: block; width: 100%; aspect-ratio: 2.3 / 1; border-radius: 10px; object-fit: cover; }
+.mock-card img, .mock-card video, .mock-pending { display: block; width: 100%; aspect-ratio: 2.3 / 1; border-radius: 10px; object-fit: cover; }
 .mock-pending { display: grid; place-items: center; background: linear-gradient(110deg, var(--surface) 30%, var(--raised) 50%, var(--surface) 70%) 0 0 / 300% 100%, var(--surface); color: var(--muted); border: 1px solid var(--line); animation: mock-shimmer 2.4s linear infinite; }
 @keyframes mock-shimmer { to { background-position: -150% 0, 0 0; } }
+.mock-media { position: relative; display: block; }
+.mock-generated video, .mock-generated .mock-pending { aspect-ratio: 16 / 9; }
+.mock-generated .mock-pending { position: absolute; inset: 0; }
+/* Finished by default; the landing motion plays the render first. */
+.mock-generated .mock-pending, .mock-generated .mock-bar, .mock-status .pill-blue { opacity: 0; }
+.mock-status { display: grid; }
+.mock-status > * { grid-area: 1 / 1; justify-self: end; }
 .mock-card-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px; }
 .mock-card-row b { overflow: hidden; font-size: 12px; font-weight: var(--weight-medium); white-space: nowrap; text-overflow: ellipsis; }
 .mock-bar { height: 4px; margin: 0 4px; border-radius: 4px; background: var(--line-strong); overflow: hidden; }
@@ -270,7 +277,6 @@
  .stage { padding: 32px 12px; }
  .window-body { grid-template-columns: 1fr; min-height: 0; }
  .window-main { padding: 16px 12px; }
- .window-videos .mock-card:last-child { display: none; }
  .section { padding-left: 16px; padding-right: 16px; }
  .showcase-foot { flex-wrap: wrap; }
  .mode-visual { min-height: 220px; }
@@ -294,6 +300,6 @@
 /* Until the landing motion script runs, keep the intro hidden so it doesn't
    flash. If the script never runs, show everything after a moment. */
 @media (prefers-reduced-motion: no-preference) {
- .motion-pending [data-intro], .motion-pending .site-header { opacity: 0; animation: motion-fallback 0s 2s forwards; }
+ .motion-pending [data-intro], .motion-pending .site-header { opacity: 0; animation: motion-fallback 0s 4s forwards; }
 }
 @keyframes motion-fallback { to { opacity: 1; } }

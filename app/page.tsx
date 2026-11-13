@@ -14,6 +14,9 @@ import './site.css';
 
 export const dynamic = 'force-dynamic';
 
+/** The prompt behind public/showcase/bus-stop.mp4, shown in the Generate demo. */
+const BUS_STOP_PROMPT = 'A curly-haired man in a green shirt waits at a sunny suburban bus stop as an absurd crowd gathers beside him: an old man playing trumpet, a bear in sunglasses, a knight in armour and a shark in a suit';
+
 const FEATURES = [
  { icon: Clock, tone: 'blue', title: 'Close the tab.', text: 'Videos keep rendering and appear in your studio when they’re ready.' },
  { icon: ReceiptText, tone: 'violet', title: 'See the cost first.', text: 'Every video shows its credit cost before you start it.' },
@@ -63,7 +66,7 @@ export default async function Landing() {
       <article className="mode-box">
        <div className="mode-visual mode-visual-generate" aria-hidden="true">
         <div className="mock-prompt">
-         <span className="mock-prompt-text">A paper boat drifting down a rain-soaked street at dusk, slow dolly in, warm streetlight reflections</span>
+         <span className="mock-prompt-text">{BUS_STOP_PROMPT}</span>
          <span className="mock-row">
           <span className="mock-seg"><i>5s</i><i className="on">10s</i><i>15s</i></span>
           <span className="mock-seg"><i className="on">16:9</i><i>9:16</i><i>1:1</i></span>
@@ -173,12 +176,15 @@ function StudioPreview() {
     <div className="window-videos">
      <small className="window-label">My videos</small>
      <div className="mock-card">
-      <img src="/showcase/character-swap.jpg" alt="" />
+      <video src="/showcase/character-swap-loop.mp4" poster="/showcase/character-swap-loop.jpg" autoPlay muted loop playsInline preload="metadata" />
       <span className="mock-card-row"><b>Character swap · 1:00</b><span className="pill pill-green">Ready</span></span>
      </div>
-     <div className="mock-card">
-      <span className="mock-pending"><Sparkles size={16} /></span>
-      <span className="mock-card-row"><b>Paper boat at dusk · 10s</b><span className="pill pill-blue">Generating</span></span>
+     <div className="mock-card mock-generated">
+      <span className="mock-media">
+       <video src="/showcase/bus-stop.mp4" poster="/showcase/bus-stop.jpg" autoPlay muted loop playsInline preload="metadata" />
+       <span className="mock-pending"><Sparkles size={16} /></span>
+      </span>
+      <span className="mock-card-row"><b>Bus stop crowd · 10s</b><span className="mock-status"><span className="pill pill-blue">Generating</span><span className="pill pill-green">Ready</span></span></span>
       <span className="mock-bar"><span /></span>
      </div>
     </div>

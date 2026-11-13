@@ -5,10 +5,16 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
+// ScrollTrigger re-measures everything on `load`, which lands mid-intro
+// (videos finish loading then) and stalls it. Media here has fixed sizes, so
+// measuring once fonts are in, and again after the intro, is enough.
+ScrollTrigger.config({ autoRefreshEvents: 'visibilitychange,DOMContentLoaded,resize' });
 
 /** Shared rhythm: 0.8s glides, 24px rises, short staggers, reveals once at
- * 85% of the viewport. */
-const ENTER = { duration: 0.8, ease: 'power2.out' };
+ * 85% of the viewport. Transforms stay 2D: GSAP's default promotes text to a
+ * GPU layer while moving and drops it at the end, which re-renders the text
+ * with a visible snap. */
+const ENTER = { duration: 0.8, ease: 'power2.out', force3D: false };
 const RISE = 24;
 const STAGGER = 0.1;
 const START = 'top 85%';
@@ -24,7 +30,10 @@ export function LandingMotion() {
   if (!root) return;
   const mm = gsap.matchMedia();
   mm.add('(prefers-reduced-motion: no-preference)', () => {
-   if (window.scrollY < 10) intro(root);
+   // Skip the intro if the page is already scrolled, or if it loaded so
+   // slowly that the CSS fallback has already shown everything.
+   if (window.scrollY < 10 && performance.now() < 3500) intro(root);
+   else void document.fonts.ready.then(() => ScrollTrigger.refresh());
    reveals(root);
    studioPreview(root);
    showcase(root);
@@ -58,13 +67,22 @@ function intro(root: HTMLElement) {
  gsap.set(rest, { y: RISE * 2 });
  gsap.set(cta, { y: RISE / 2 });
 
- gsap.timeline({ onComplete: () => { gsap.set([mark, ...words, ...rest, cta, header], { clearProps: 'all' }); } })
+ const tl = gsap.timeline({
+  paused: true,
+  defaults: { force3D: false },
+  onComplete: () => {
+   gsap.set([mark, ...words, ...rest, cta, header], { clearProps: 'all' });
+   ScrollTrigger.refresh();
+  },
+ })
   .to(mark, { opacity: 1, scale: 2, rotate: 0, duration: 0.7, ease: 'power4.out' }, 0)
   .to(mark, { x: 0, y: 0, scale: 1, duration: 0.9, ease: 'power3.inOut' }, 0.6)
   .to(words, { yPercent: 0, duration: 1, ease: 'power4.out', stagger: 0.06 }, 1.05)
   .to(header, { opacity: 1, ...ENTER }, 1.1)
   .to(rest, { opacity: 1, y: 0, ...ENTER, duration: 1, stagger: STAGGER }, 1.35)
   .to(cta, { opacity: 1, y: 0, ...ENTER }, 1.6);
+ // Start once Manrope is in, so no word changes shape mid-flight.
+ void document.fonts.ready.then(() => tl.play());
 }
 
 function reveals(root: HTMLElement) {
@@ -88,8 +106,30 @@ function studioPreview(root: HTMLElement) {
  const parts = win.querySelectorAll('.side-item, .mock-composer, .mock-card');
  gsap.from(parts, { y: 16, opacity: 0, ...ENTER, stagger: 0.08, delay: 0.3, scrollTrigger: { trigger: win, start: 'top 75%', once: true } });
  gsap.fromTo(win.querySelectorAll('.mock-prompt-text mark'), { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: 0.6, ease: 'power2.inOut', stagger: 0.35, delay: 0.9, scrollTrigger: { trigger: win, start: 'top 75%', once: true } });
- const bar = win.querySelector('.mock-bar span');
- if (bar) gsap.fromTo(bar, { width: '8%' }, { width: '92%', duration: 8, ease: 'none', repeat: -1, repeatDelay: 0.8 });
+ const card = win.querySelector('.mock-generated');
+ if (card) generating(card, win);
+}
+
+/** The second video "renders": its bar fills, then the placeholder fades
+ * into the finished video and the status flips to Ready. */
+function generating(card: Element, trigger: Element) {
+ const video = card.querySelector('video');
+ const pending = card.querySelector('.mock-pending');
+ const bar = card.querySelector('.mock-bar');
+ const fill = card.querySelector('.mock-bar span');
+ const [busy, ready] = card.querySelectorAll('.mock-status .pill');
+ if (!video || !pending || !bar || !fill || !busy || !ready) return;
+ video.pause();
+ gsap.set([pending, bar, busy], { opacity: 1 });
+ gsap.set(ready, { opacity: 0 });
+ gsap.set(fill, { width: '4%' });
+ gsap.timeline({ scrollTrigger: { trigger, start: 'top 70%', once: true } })
+  .to(fill, { width: '100%', duration: 3.2, ease: 'power1.inOut' }, 0.6)
+  .add(() => { video.currentTime = 0; void video.play().catch(() => {}); })
+  .to(pending, { opacity: 0, duration: 0.7, ease: 'power2.out' })
+  .to(bar, { opacity: 0, duration: 0.4 }, '<')
+  .to(busy, { opacity: 0, duration: 0.25 }, '<')
+  .to(ready, { opacity: 1, duration: 0.35 }, '<0.15');
 }
 
 function showcase(root: HTMLElement) {
@@ -108,11 +148,11 @@ function modes(root: HTMLElement) {
   gsap.set(prompt, { minHeight: prompt.offsetHeight });
   node.nodeValue = '';
   gsap.to(typed, {
-   n: text.length, duration: text.length * 0.028, ease: 'none',
+   n: text.length, duration: text.length * 0.022, ease: 'none',
    onUpdate: () => { node.nodeValue = text.slice(0, Math.round(typed.n)); },
    scrollTrigger: { trigger: prompt, start: 'top 80%', once: true },
   });
-  gsap.from(root.querySelectorAll('.mode-visual-generate .mock-row > *'), { scale: 0.85, opacity: 0, duration: 0.5, ease: 'back.out(2)', stagger: STAGGER, delay: text.length * 0.028, scrollTrigger: { trigger: prompt, start: 'top 80%', once: true } });
+  gsap.from(root.querySelectorAll('.mode-visual-generate .mock-row > *'), { scale: 0.85, opacity: 0, duration: 0.5, ease: 'back.out(2)', stagger: STAGGER, delay: text.length * 0.022, scrollTrigger: { trigger: prompt, start: 'top 80%', once: true } });
  }
  const swap = root.querySelector('.mode-visual-swap');
  if (swap) gsap.from(swap.children, { y: RISE, opacity: 0, scale: 0.96, ...ENTER, stagger: 0.14, scrollTrigger: { trigger: swap, start: 'top 80%', once: true } });
