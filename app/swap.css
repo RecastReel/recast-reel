@@ -220,3 +220,20 @@
  .spin { animation: none; }
  .task-bar.is-indeterminate span { left: 0; width: 100%; opacity: .4; animation: none; }
 }
+
+.credit-topup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  width: min(600px, 100%);
+  margin: 16px auto 0;
+  padding: 16px 20px;
+  border: 1px solid #494238;
+  border-radius: 16px;
+  background: #24211d;
+  color: #f4e7d3;
+}
+
+.credit-topup p { margin: 0; font-size: 14px; }

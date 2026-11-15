@@ -525,6 +525,7 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
       console.error("Swap request failed", error);
     return json(
       {
+        ...(error instanceof HttpError && error.addCreditsUrl ? { addCreditsUrl: error.addCreditsUrl } : {}),
         message:
           error instanceof HttpError
             ? error.message

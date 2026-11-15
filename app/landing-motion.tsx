@@ -5,10 +5,12 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
-// ScrollTrigger re-measures everything on `load`, which lands mid-intro
-// (videos finish loading then) and stalls it. Media here has fixed sizes, so
-// measuring once fonts are in, and again after the intro, is enough.
-ScrollTrigger.config({ autoRefreshEvents: 'visibilitychange,DOMContentLoaded,resize' });
+if (typeof window !== 'undefined') {
+ // ScrollTrigger re-measures everything on `load`, which lands mid-intro
+ // (videos finish loading then) and stalls it. Media here has fixed sizes, so
+ // measuring once fonts are in, and again after the intro, is enough.
+ ScrollTrigger.config({ autoRefreshEvents: 'visibilitychange,DOMContentLoaded,resize' });
+}
 
 /** Shared rhythm: 0.8s glides, 24px rises, short staggers, reveals once at
  * 85% of the viewport. Transforms stay 2D: GSAP's default promotes text to a

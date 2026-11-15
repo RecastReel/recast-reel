@@ -10,7 +10,7 @@ export type Swap = {
 };
 export type UploadedMedia = { url: string; seconds: number; token: string };
 
-export class SwapError extends Error { constructor(message: string, public status: number) { super(message); } }
+export class SwapError extends Error { constructor(message: string, public status: number, public addCreditsUrl?: string) { super(message); } }
 
 export async function swapApi<T>(path: string, body?: unknown, options: { idempotency?: string; signal?: AbortSignal; method?: 'DELETE' } = {}): Promise<T> {
  let response: Response;
@@ -26,7 +26,7 @@ export async function swapApi<T>(path: string, body?: unknown, options: { idempo
   throw new SwapError('Connection lost. Check your internet and try again.', 0);
  }
  const data = await response.json().catch(() => ({ message: 'Unexpected response from the server.' }));
- if (!response.ok) throw new SwapError(data.message || 'The request failed.', response.status);
+ if (!response.ok) throw new SwapError(data.message || 'The request failed.', response.status, response.status === 402 && typeof data.addCreditsUrl === "string" ? data.addCreditsUrl : undefined);
  return data as T;
 }
 

@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { authSecret, isProduction } from "./config";
+import { authSecret, isProduction, localMode } from "./config";
 import { mp4Duration } from "./mp4";
 
 /** Server-only MadeByCue client. Every customer request uses the platform
@@ -10,6 +10,7 @@ export class HttpError extends Error {
   constructor(
     message: string,
     public status = 400,
+    public addCreditsUrl?: string,
   ) {
     super(message);
   }
@@ -37,6 +38,12 @@ export async function upstream(path: string, init: RequestInit = {}) {
   });
   if (!response.ok && !(response.status >= 300 && response.status < 400)) {
     const body = await response.json().catch(() => ({}));
+    if (localMode() && response.status === 402 && body?.code === "insufficient_credits") {
+      const url = typeof body.add_credits_url === "string" ? URL.parse(body.add_credits_url) : null;
+      const billingUrl = url && ["https://www.made.app", "https://made.app", "https://www.madebycue.dev", "https://madebycue.dev"].includes(url.origin)
+        && !url.username && !url.password && /^\/billing\/?$/.test(url.pathname) ? url.href : undefined;
+      throw new HttpError("Your MadeByCue account doesn’t have enough credits. Top up to keep creating.", 402, billingUrl);
+    }
     // Provider billing and key problems are ours to fix, not the customer's.
     if ([401, 402, 403].includes(response.status)) {
       console.error("MadeByCue rejected the platform key", {

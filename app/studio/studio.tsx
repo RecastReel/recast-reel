@@ -105,7 +105,8 @@ export function Studio({
   const ready = mode === "swap" ? Boolean(character && clip && promptReady) : promptReady;
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | SwapError>("");
+  const addCreditsUrl = error instanceof SwapError ? error.addCreditsUrl : undefined;
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [items, setItems] = useState<Swap[]>([]);
   const itemsRef = useRef(items);
@@ -327,7 +328,7 @@ export function Studio({
       setPrepared({ body, costCents, key: crypto.randomUUID() });
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Upload failed. Try again.",
+        err instanceof SwapError ? err : err instanceof Error ? err.message : "Upload failed. Try again.",
       );
     } finally {
       setBusy(false);
@@ -365,7 +366,7 @@ export function Studio({
       if (err instanceof SwapError && err.status > 0 && err.status < 500)
         setPrepared((p) => p && { ...p, key: crypto.randomUUID() });
       setError(
-        err instanceof Error ? err.message : "Could not start. Try again.",
+        err instanceof SwapError ? err : err instanceof Error ? err.message : "Could not start. Try again.",
       );
     } finally {
       setBusy(false);
@@ -663,15 +664,23 @@ export function Studio({
                       {progress}
                     </p>
                   )}
-                  {error && (
+                  {error && !addCreditsUrl && (
                     <p className="dock-error" role="alert">
-                      {error}
+                      {error instanceof SwapError ? error.message : error}
                     </p>
                   )}
                 </div>
               </>
             )}
           </section>
+          {addCreditsUrl && (
+            <div className="credit-topup">
+              <p role="alert">{error instanceof SwapError ? error.message : error}</p>
+              <a className="button-primary" href={addCreditsUrl} target="_blank" rel="noopener noreferrer">
+                Add credits on MadeByCue
+              </a>
+            </div>
+          )}
         </div>
 
         <section className="swaps" ref={gallery} aria-label={items.length ? "My videos" : "Examples"}>
