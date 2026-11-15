@@ -147,16 +147,23 @@ function costCents(status: string, cost: unknown, reserved: number) {
 
 /** MadeByCue's price for a task, in cents. Estimating is free and starts
  * nothing. */
-async function estimateCents(estimate: Record<string, unknown>) {
+async function estimatePrice(estimate: Record<string, unknown>) {
   const result = await cueJson<{
     cost?: { estimated?: number | null };
     initial_hold?: { amount?: number };
+    required_credits?: number | null;
   }>("/api/v1/estimate", estimate);
   const cents =
     toCents(result.cost?.estimated) ?? toCents(result.initial_hold?.amount);
   if (cents === null)
     throw new HttpError("Couldn't price this video. Try again shortly.", 502);
-  return cents;
+  const requiredCredits = result.required_credits;
+  return {
+    costCents: cents,
+    requiredCredits: typeof requiredCredits === "number" && Number.isSafeInteger(requiredCredits) && requiredCredits > 0
+      ? requiredCredits
+      : null,
+  };
 }
 
 /** Turn a request into the MadeByCue task, plus the body that prices it.
@@ -243,7 +250,7 @@ async function createSwap(req: NextRequest, userId: string) {
     task: request,
     estimate,
   } = buildRequest(userId, await body(req));
-  const cents = await estimateCents(estimate);
+  const { costCents: cents, requiredCredits } = await estimatePrice(estimate);
   const db = await getDb();
   // Serialize reservations per user so two tabs can't overspend the credit.
   const reserved = await db.transaction(async (tx) => {
@@ -303,6 +310,13 @@ async function createSwap(req: NextRequest, userId: string) {
         .update(swaps)
         .set({ status: "failed", refunded: true, updatedAt: new Date() })
         .where(eq(swaps.id, reserved.id));
+    if (error instanceof HttpError && error.addCreditsUrl && requiredCredits !== null) {
+      throw new HttpError(
+        `This video needs at least ${requiredCredits.toLocaleString("en-US")} MadeByCue credits (US$${(requiredCredits / 100).toFixed(2)}) available. Top up to keep creating.`,
+        error.status,
+        error.addCreditsUrl,
+      );
+    }
     throw error;
   }
 }
@@ -337,7 +351,8 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
     if (path === "swaps/estimate" && req.method === "POST") {
       await requirePlan(user.id);
       const { estimate } = buildRequest(user.id, await body(req));
-      return json({ costCents: await estimateCents(estimate) });
+      const { costCents } = await estimatePrice(estimate);
+      return json({ costCents });
     }
 
     const match = path.match(
