@@ -105,6 +105,7 @@ export function Studio({
   const ready = mode === "swap" ? Boolean(character && clip && promptReady) : promptReady;
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
+  const [retryNotice, setRetryNotice] = useState("");
   const [error, setError] = useState<string | SwapError>("");
   const addCreditsUrl = error instanceof SwapError ? error.addCreditsUrl : undefined;
   const [prepared, setPrepared] = useState<Prepared | null>(null);
@@ -274,6 +275,7 @@ export function Studio({
   }
 
   function resetComposer() {
+    setRetryNotice("");
     setCharacter(null);
     setClip(null);
     setReferences([]);
@@ -287,6 +289,42 @@ export function Studio({
     if (promptHighlight.current) promptHighlight.current.scrollTop = 0;
   }
 
+  async function reuseInputs(video: Swap) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      type SavedMedia = UploadedMedia & { preview: string };
+      const inputs = await swapApi<{
+        aspectRatio: string;
+        references: SavedMedia[];
+        video: SavedMedia | null;
+        needsUploads: boolean;
+      }>(`swaps/${video.id}/retry`);
+      const pick = (media: SavedMedia, name: string) => {
+        uploaded.current.set(media.preview, media);
+        return { id: media.preview, name, url: media.preview };
+      };
+      resetComposer();
+      setMode(video.kind);
+      if (video.kind === "swap") {
+        setSwapPrompt(video.prompt);
+        if (inputs.references[0]) setCharacter(pick(inputs.references[0], "Previous character image"));
+        if (inputs.video) setClip({ ...pick(inputs.video, "Previous source video"), seconds: inputs.video.seconds });
+      } else {
+        setGeneratePrompt(video.prompt);
+        if (GENERATE_SECONDS.includes(video.seconds)) setLength(video.seconds);
+        setRatio(inputs.aspectRatio);
+        setReferences(inputs.references.map((media, index) => pick(media, `Previous reference ${index + 1}`)));
+      }
+      setRetryNotice(inputs.needsUploads ? "Available settings restored. Add any original uploads you still want to use." : "Inputs restored. Review them before starting a new video.");
+      document.querySelector(".composer-stage")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch {
+      setRetryNotice("Could not restore these inputs. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function prepare() {
     if (busy) return;
     if (!promptReady)
@@ -297,6 +335,7 @@ export function Studio({
       return setError("Describe the video you want to create.");
     setBusy(true);
     setError("");
+    setRetryNotice("");
     setProgress("Uploading…");
     try {
       const body =
@@ -673,6 +712,7 @@ export function Studio({
               </>
             )}
           </section>
+          {retryNotice && <p className="dock-status" role="status">{retryNotice}</p>}
           {addCreditsUrl && (
             <div className="credit-topup">
               <p role="alert">{error instanceof SwapError ? error.message : error}</p>
@@ -769,6 +809,11 @@ export function Studio({
                         </span>
                       )}
                       <div className="task-actions">
+                        {plan.active && terminal(s.status) && (
+                          <button type="button" disabled={busy} onClick={() => void reuseInputs(s)}>
+                            Reuse inputs
+                          </button>
+                        )}
                         {s.outputs[0] && (
                           <a href={`${s.outputs[0].url}?download=1`} download>
                             Download video

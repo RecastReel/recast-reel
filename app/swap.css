@@ -115,7 +115,7 @@
 .task-timer-row span { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .task-timer-note, .task-wait-note { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .task-wait-note { display: block; }
-.task-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+.task-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
 .task-actions a, .task-actions button { display: inline-flex; align-items: center; gap: 6px; padding: 0; background: none; color: var(--ink); font-size: 13px; font-weight: var(--weight-medium); }
 .task-actions a:hover { opacity: .7; }
 .task-actions .task-delete { margin-left: auto; color: var(--muted); }

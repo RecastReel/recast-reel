@@ -60,6 +60,29 @@ function ownUpload(userId: string, input: Record<string, unknown>) {
 }
 
 /** Public task shape: status, progress and our own output URLs only. */
+function retryInputs(row: typeof swaps.$inferSelect) {
+  const inputs = (row.task?.recastInputs ?? row.task ?? {}) as Record<string, unknown>;
+  const saved = row.task?.recastInputs != null;
+  const mediaAvailable = saved && Date.now() - row.createdAt.getTime() < 7 * 24 * 60 * 60 * 1000;
+  const references = mediaAvailable && Array.isArray(inputs.reference_images)
+    ? inputs.reference_images.slice(0, MAX_REFERENCES).filter((url): url is string => typeof url === "string")
+    : [];
+  const media = (url: string, index: number, kind: "image" | "video") => {
+    const seconds = kind === "video" ? row.seconds : 0;
+    return {
+      url, seconds, token: mediaToken(row.userId, url, seconds, kind),
+      preview: `/api/swap/swaps/${row.id}/inputs/${index}`,
+    };
+  };
+  return {
+    aspectRatio: typeof inputs.aspect_ratio === "string" && GENERATE_RATIOS.includes(inputs.aspect_ratio) ? inputs.aspect_ratio : "16:9",
+    references: references.map((url, index) => media(url, index + 1, "image")),
+    video: mediaAvailable && typeof inputs.source_video === "string" ? media(inputs.source_video, 0, "video") : null,
+    needsUploads: !saved || (!mediaAvailable && (row.kind === "swap" ||
+      (Array.isArray(inputs.reference_images) && inputs.reference_images.length > 0))),
+  };
+}
+
 export function publicSwap(row: typeof swaps.$inferSelect) {
   const task = (row.task ?? {}) as {
     processing_state?: string;
@@ -122,7 +145,7 @@ async function refresh(row: typeof swaps.$inferSelect) {
     .update(swaps)
     .set({
       status,
-      task,
+      task: { ...task, recastInputs: row.task?.recastInputs },
       costCents: costCents(status, task.cost, row.costCents),
       refunded: REFUNDABLE.includes(status) ? true : row.refunded,
       updatedAt: new Date(),
@@ -280,6 +303,7 @@ async function createSwap(req: NextRequest, userId: string) {
         prompt,
         seconds,
         costCents: cents,
+        task: { recastInputs: request },
       })
       .returning();
     return row!;
@@ -296,7 +320,7 @@ async function createSwap(req: NextRequest, userId: string) {
       .set({
         taskId: String(task.id),
         status: String(task.status),
-        task,
+        task: { ...task, recastInputs: request },
         updatedAt: new Date(),
       })
       .where(eq(swaps.id, reserved.id))
@@ -356,11 +380,11 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
     }
 
     const match = path.match(
-      /^swaps\/([0-9a-f-]{36})(?:\/outputs\/(\d{1,2}))?$/,
+      /^swaps\/([0-9a-f-]{36})(?:\/(outputs|inputs)\/(\d{1,2})|\/(retry))?$/,
     );
     // Deleting hides a finished video and blocks its output URLs. MadeByCue
     // removes the files itself after 7 days; the cost keeps counting.
-    if (match && !match[2] && req.method === "DELETE") {
+    if (match && !match[2] && !match[4] && req.method === "DELETE") {
       const [row] = await db
         .update(swaps)
         .set({ deletedAt: new Date(), updatedAt: new Date() })
@@ -389,16 +413,24 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
           ),
         );
       if (!row) throw new HttpError("Swap not found.", 404);
+      if (match[4]) return json(retryInputs(row));
       if (!match[2]) return json(publicSwap(await refresh(row)));
-      if (!row.taskId) throw new HttpError("This swap has no result yet.", 404);
-      const response = await upstream(
-        `/api/v1/tasks/${row.taskId}/outputs/${match[2]}`,
-        {
-          headers: req.headers.has("range")
-            ? { Range: req.headers.get("range")! }
-            : {},
-        },
-      );
+      let mediaPath = `/api/v1/tasks/${row.taskId}/outputs/${match[3]}`;
+      if (match[2] === "inputs") {
+        const inputs = retryInputs(row);
+        const media = Number(match[3]) === 0 ? inputs.video : inputs.references[Number(match[3]) - 1];
+        const url = media && URL.parse(media.url, "https://www.madebycue.dev");
+        if (!url || !url.pathname.startsWith("/api/media/"))
+          throw new HttpError("The original upload is unavailable.", 404);
+        mediaPath = url.pathname;
+      } else if (!row.taskId) {
+        throw new HttpError("This swap has no result yet.", 404);
+      }
+      const response = await upstream(mediaPath, {
+        headers: req.headers.has("range") ? { Range: req.headers.get("range")! } : {},
+      });
+      if (match[2] === "inputs" && !/^(image\/(png|jpeg|webp)|video\/(mp4|quicktime))(?:;|$)/i.test(response.headers.get("content-type") ?? ""))
+        throw new HttpError("The original upload is unavailable.", 404);
       const headers = new Headers({
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
