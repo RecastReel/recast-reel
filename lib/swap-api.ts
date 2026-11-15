@@ -1,3 +1,4 @@
+import { localMode } from "./config";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -280,7 +281,7 @@ async function createSwap(req: NextRequest, userId: string) {
   try {
     const task = await cueJson<Record<string, unknown>>(
       "/api/v1/tasks",
-      request,
+      { ...request, include_billing_link: localMode() },
       { "Idempotency-Key": `swap-${reserved.id}` },
     );
     const [row] = await db

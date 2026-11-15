@@ -39,10 +39,17 @@ export async function upstream(path: string, init: RequestInit = {}) {
   if (!response.ok && !(response.status >= 300 && response.status < 400)) {
     const body = await response.json().catch(() => ({}));
     if (localMode() && response.status === 402) {
+      const actions: { type?: string; url?: string }[] = Array.isArray(body?.error?.actions) ? body.error.actions : [];
+      const billingAction = actions.find((action) => action?.type === "billing" && typeof action.url === "string");
+      const url = billingAction?.url ? URL.parse(billingAction.url) : null;
+      const billingUrl = url?.origin === "https://www.madebycue.dev" && !url.username && !url.password &&
+        (url.pathname === "/billing" || url.pathname === "/billing/access")
+        ? url.href
+        : "https://www.madebycue.dev/billing";
       throw new HttpError(
         "Your MadeByCue account doesn’t have enough credits. Top up to keep creating.",
         402,
-        "https://www.madebycue.dev/billing",
+        billingUrl,
       );
     }
     // Provider billing and key problems are ours to fix, not the customer's.
@@ -50,7 +57,7 @@ export async function upstream(path: string, init: RequestInit = {}) {
       console.error("MadeByCue rejected the platform key", {
         path,
         status: response.status,
-        body,
+        code: body?.error?.code ?? body?.code,
       });
       throw new HttpError(
         "Swapping is temporarily unavailable. Please try again soon.",
