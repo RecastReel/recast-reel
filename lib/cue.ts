@@ -11,6 +11,7 @@ export class HttpError extends Error {
     message: string,
     public status = 400,
     public addCreditsUrl?: string,
+    public missingCredits?: number,
   ) {
     super(message);
   }
@@ -46,10 +47,15 @@ export async function upstream(path: string, init: RequestInit = {}) {
         (url.pathname === "/billing" || url.pathname === "/billing/access")
         ? url.href
         : "https://www.madebycue.dev/billing";
+      const missing = body?.error?.funding?.missing_credits;
+      const missingCredits = typeof missing === "number" && Number.isSafeInteger(missing) && missing > 0
+        ? missing
+        : undefined;
       throw new HttpError(
         "Your MadeByCue account doesn’t have enough credits. Top up to keep creating.",
         402,
         billingUrl,
+        missingCredits,
       );
     }
     // Provider billing and key problems are ours to fix, not the customer's.

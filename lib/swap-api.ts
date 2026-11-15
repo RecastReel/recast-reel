@@ -310,7 +310,7 @@ async function createSwap(req: NextRequest, userId: string) {
         .update(swaps)
         .set({ status: "failed", refunded: true, updatedAt: new Date() })
         .where(eq(swaps.id, reserved.id));
-    if (error instanceof HttpError && error.addCreditsUrl && requiredCredits !== null) {
+    if (error instanceof HttpError && error.addCreditsUrl && requiredCredits !== null && error.missingCredits === undefined) {
       throw new HttpError(
         `This video needs at least ${requiredCredits.toLocaleString("en-US")} MadeByCue credits (US$${(requiredCredits / 100).toFixed(2)}) available. Top up to keep creating.`,
         error.status,
@@ -544,7 +544,9 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
         ...(error instanceof HttpError && error.addCreditsUrl ? { addCreditsUrl: error.addCreditsUrl } : {}),
         message:
           error instanceof HttpError
-            ? error.message
+            ? error.missingCredits === undefined
+              ? error.message
+              : `Add ${error.missingCredits.toLocaleString("en-US")} more MadeByCue credits (US$${(error.missingCredits / 100).toFixed(2)} in credit value) to keep creating.`
             : "Something went wrong. Please retry.",
       },
       status,
