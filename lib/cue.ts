@@ -38,10 +38,10 @@ export async function upstream(path: string, init: RequestInit = {}) {
   });
   if (!response.ok && !(response.status >= 300 && response.status < 400)) {
     const body = await response.json().catch(() => ({}));
-    if (localMode() && response.status === 402 && body?.code === "insufficient_credits") {
+    if (localMode() && response.status === 402) {
       const url = typeof body.add_credits_url === "string" ? URL.parse(body.add_credits_url) : null;
       const billingUrl = url && ["https://www.made.app", "https://made.app", "https://www.madebycue.dev", "https://madebycue.dev"].includes(url.origin)
-        && !url.username && !url.password && /^\/billing\/?$/.test(url.pathname) ? url.href : undefined;
+        && !url.username && !url.password && /^\/billing\/?$/.test(url.pathname) ? url.href : "https://www.made.app/billing";
       throw new HttpError("Your MadeByCue account doesn’t have enough credits. Top up to keep creating.", 402, billingUrl);
     }
     // Provider billing and key problems are ours to fix, not the customer's.
