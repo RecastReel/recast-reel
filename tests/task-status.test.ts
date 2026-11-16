@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { taskDisplay } from '../lib/task-status';
+import { shownPercent, taskDisplay } from '../lib/task-status';
 import { publicSwap } from '../lib/swap-api';
 import type { Swap } from '../lib/swap-client';
 import type { swaps } from '../lib/db/schema';
@@ -55,4 +55,12 @@ test('public API forwards processing_state without rewriting lifecycle status', 
  assert.equal(result.processingState, 'processing');
  assert.equal(result.status, 'queued');
  assert.equal(taskDisplay(result as Swap).label, 'Creating video');
+});
+test('shown progress keeps moving between reported steps without finishing early', () => {
+ const at = (reportedFor: number, elapsed: number, reported?: number) => shownPercent({ reported, reportedFor, elapsed, expected: 2100 });
+ assert.ok(at(30, 30, 40) > 40, 'creeps past a stalled report');
+ assert.ok(at(1e6, 0, 40) <= 45, 'creep alone stays within 5 points');
+ assert.ok(at(10, 10) < at(20, 20), 'moves with time when nothing is reported');
+ assert.ok(at(1e6, 1e6, 50) < 99.01, 'never claims to be done');
+ assert.equal(at(0, 0, 100), 100, 'a finished report is shown as is');
 });

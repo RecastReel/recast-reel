@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { taskDisplay } from "../../lib/task-status";
+import { useEffect, useRef, useState } from "react";
+import { shownPercent, taskDisplay } from "../../lib/task-status";
 import type { Swap } from "../../lib/swap-client";
 
 function clock(totalSeconds: number) {
@@ -24,6 +24,9 @@ function finishBy(estimate: Swap["estimate"]) {
   return Number.isFinite(updated) && high ? updated + high * 1000 : null;
 }
 
+/** Typical full run, used for the bar until MadeByCue sends an estimate. */
+const TYPICAL_SECONDS = { swap: 35 * 60, generate: 5.5 * 60 };
+
 /** Live progress for an unfinished video: a ticking countdown to the
  * estimated finish, time elapsed since it was submitted, and a reminder that
  * it keeps going without this tab. Re-anchors whenever a poll lands. */
@@ -38,7 +41,29 @@ export function TaskTimer({ task }: { task: Swap }) {
   const target = finishBy(task.estimate);
   const left = target === null ? null : (target - now) / 1000;
   const display = taskDisplay(task);
-  const percent = display.waiting ? undefined : task.progress?.percent;
+  const reported = task.progress?.percent;
+
+  // When the reported percent last changed, so the bar can creep from it,
+  // and the highest value shown so a new estimate never moves it back.
+  const seen = useRef({ reported, at: now });
+  if (seen.current.reported !== reported) seen.current = { reported, at: now };
+  const peak = useRef(0);
+  let percent: number | undefined;
+  if (!display.waiting) {
+    // Time spent waiting in line doesn't count toward rendering.
+    const admitted = Date.parse(task.queue?.admitted_at ?? "");
+    const start = Number.isFinite(admitted) ? admitted : Date.parse(task.createdAt);
+    peak.current = Math.max(
+      peak.current,
+      shownPercent({
+        reported,
+        reportedFor: (now - seen.current.at) / 1000,
+        elapsed: (now - start) / 1000,
+        expected: target === null ? TYPICAL_SECONDS[task.kind] : (target - start) / 1000,
+      }),
+    );
+    percent = peak.current;
+  }
 
   let headline: string;
   if (display.waiting) headline = display.waitingLabel;
@@ -54,7 +79,7 @@ export function TaskTimer({ task }: { task: Swap }) {
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={typeof percent === "number" ? percent : undefined}
+        aria-valuenow={typeof percent === "number" ? Math.floor(percent) : undefined}
       >
         <span
           style={
@@ -66,7 +91,10 @@ export function TaskTimer({ task }: { task: Swap }) {
       </div>
       <div className="task-timer-row">
         <strong>{headline}</strong>
-        <span>{clock(elapsed)} elapsed</span>
+        <span>
+          {typeof percent === "number" && `${Math.floor(percent)}% · `}
+          {clock(elapsed)} elapsed
+        </span>
       </div>
       <p className="task-timer-note">
         {task.kind === "swap"

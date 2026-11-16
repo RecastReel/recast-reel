@@ -96,6 +96,17 @@
 .task-preview { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 18px; object-fit: contain; background: #000; }
 .task-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: var(--raised); color: var(--blue-ink); font-size: 13px; font-weight: var(--weight-medium); box-shadow: inset 0 0 0 1px var(--line); }
 .task-placeholder.is-terminal { color: var(--muted); }
+.swap .play-wait { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; padding: 6px 12px; border-radius: var(--radius-pill); background: var(--surface); color: var(--ink-2); font-size: var(--text-caption); font-weight: var(--weight-medium); box-shadow: 0 0 0 1px var(--line-strong); }
+.swap .play-wait:hover { background: var(--line-strong); color: var(--ink); }
+.snake { position: relative; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 18px; background: var(--canvas); box-shadow: inset 0 0 0 1px var(--line); }
+.snake canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: manipulation; }
+.snake canvas:focus-visible { outline: 2px solid var(--line-strong); outline-offset: -2px; border-radius: 18px; }
+.snake[data-playing="true"] canvas { touch-action: none; }
+.snake-hud { position: absolute; top: 8px; left: 12px; right: 8px; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; pointer-events: none; }
+.snake-status { overflow: hidden; margin-left: auto; text-overflow: ellipsis; white-space: nowrap; color: var(--blue-ink); }
+.swap .snake-hud button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border-radius: 50%; background: var(--raised); color: var(--ink); box-shadow: 0 0 0 1px var(--line-strong); pointer-events: auto; }
+.snake-overlay { position: absolute; inset: 0; display: grid; place-content: center; gap: 4px; padding: 16px; background: rgb(0 0 0 / .45); color: var(--ink); font-size: 14px; text-align: center; pointer-events: none; }
+.snake-overlay small { color: var(--muted); font-size: 12px; }
 .task-copy { padding: 14px 10px 8px; }
 .task-kind { display: block; margin-bottom: 6px; color: var(--muted); font-size: var(--text-caption); font-weight: var(--weight-medium); }
 .task-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -108,6 +119,9 @@
 .task-timer { margin-top: 14px; }
 .task-bar { position: relative; height: 4px; overflow: hidden; border-radius: 4px; background: var(--line-strong); }
 .task-bar span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--accent); transition: width .6s ease; }
+.task-bar:not(.is-indeterminate) span { overflow: hidden; transition: width 1s linear; }
+.task-bar:not(.is-indeterminate) span::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / .5), transparent); transform: translateX(-100%); animation: task-bar-shimmer 1.8s ease-in-out infinite; }
+@keyframes task-bar-shimmer { to { transform: translateX(100%); } }
 .task-bar.is-indeterminate span { width: 35%; animation: task-bar-slide 1.8s ease-in-out infinite; }
 @keyframes task-bar-slide { from { left: -35%; } to { left: 100%; } }
 .task-timer-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-top: 10px; }
@@ -219,6 +233,7 @@
  .swap button, .swap a { transition: none; }
  .spin { animation: none; }
  .task-bar.is-indeterminate span { left: 0; width: 100%; opacity: .4; animation: none; }
+ .task-bar span::after { animation: none; display: none; }
 }
 
 .credit-topup {

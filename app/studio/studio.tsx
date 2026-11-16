@@ -6,13 +6,10 @@ import {
   ArrowRight,
   UserRound,
   Film,
-  CircleAlert,
-  CircleCheck,
   LoaderCircle,
   Plus,
   RefreshCw,
   RotateCcw,
-  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -29,10 +26,9 @@ import {
   type Swap,
   type UploadedMedia,
 } from "../../lib/swap-client";
-import { taskDisplay } from "../../lib/task-status";
 import { MONTHLY_CREDITS } from "../../lib/monthly-plan";
 import { MonthlyPlanCard } from "../billing-buttons";
-import { TaskTimer } from "./task-timer";
+import { TaskCard, terminal } from "./task-card";
 import { TrimDialog } from "./trim-dialog";
 import "../swap.css";
 
@@ -44,10 +40,6 @@ const SWAP_PROMPT = "Swap [specify the character to replace, e.g. the man in a b
 
 const MIN_SECONDS = 40,
   MAX_SECONDS = 600;
-const TERMINAL = ["succeeded", "failed", "needs_input", "cancelled", "expired"];
-const terminal = (status: string) => TERMINAL.includes(status);
-const seconds = (n: number) =>
-  `${Math.max(0, Math.round(n))} second${Math.round(n) === 1 ? "" : "s"}`;
 
 function localDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -109,6 +101,7 @@ export function Studio({
   const addCreditsUrl = error instanceof SwapError ? error.addCreditsUrl : undefined;
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [items, setItems] = useState<Swap[]>([]);
+  const [playing, setPlaying] = useState<string | null>(null);
   const itemsRef = useRef(items);
   const uploaded = useRef(new Map<string, UploadedMedia>());
   const imageInput = useRef<HTMLInputElement>(null);
@@ -146,18 +139,22 @@ export function Studio({
     return () => clearInterval(timer);
   }, [purchased]);
 
-  // Check unfinished videos, backing off while the tab is hidden. A failed
-  // check is retried on the next tick; coming back to the tab or back
-  // online checks right away.
+  // Check unfinished videos every 15 seconds while the page is in view and
+  // not at all while the tab is hidden: videos take minutes, and the bar
+  // keeps moving between checks. Coming back to the tab or window, or back
+  // online, checks right away. A failed check is retried on the next tick.
   useEffect(() => {
     let stopped = false,
       running = false,
+      last = 0,
       timer: ReturnType<typeof setTimeout>;
     async function check() {
       clearTimeout(timer);
       const pending = itemsRef.current.filter((s) => !terminal(s.status));
       if (stopped || running || !pending.length) return;
+      if (document.visibilityState === "hidden") return;
       running = true;
+      last = Date.now();
       await Promise.allSettled(
         pending.map(async (job) => {
           const fresh = await swapApi<Swap>(`swaps/${job.id}`);
@@ -167,22 +164,21 @@ export function Studio({
         }),
       );
       running = false;
-      if (!stopped)
-        timer = setTimeout(
-          () => void check(),
-          document.visibilityState === "hidden" ? 60000 : 3000,
-        );
+      if (!stopped) timer = setTimeout(() => void check(), 15000);
     }
+    // Focus and visibility often fire together; one check covers both.
     const resume = () => {
-      if (document.visibilityState === "visible") void check();
+      if (Date.now() - last > 2000) void check();
     };
     void check();
     document.addEventListener("visibilitychange", resume);
+    window.addEventListener("focus", resume);
     window.addEventListener("online", resume);
     return () => {
       stopped = true;
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("focus", resume);
       window.removeEventListener("online", resume);
     };
   }, [items.length]);
@@ -347,7 +343,9 @@ export function Studio({
       });
       setItems((list) => [created, ...list.filter((s) => s.id !== created.id)]);
       setPrepared(null);
+      setCharacter(null);
       setClip(null);
+      setReferences([]);
       setPrompt(mode === "swap" ? SWAP_PROMPT : "");
       void refreshPlan();
       setTimeout(
@@ -710,85 +708,15 @@ export function Studio({
           )}
           {items.length ? (
             <div className="swaps-grid">
-              {items.map((s) => {
-                const display = taskDisplay(s);
-                return (
-                  <article className="task-card" key={s.id}>
-                    {s.outputs[0] ? (
-                      <video
-                        className="task-preview studio-video"
-                        src={s.outputs[0].url}
-                        controls
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : (
-                      <div
-                        className={`task-preview task-placeholder ${terminal(s.status) ? "is-terminal" : ""}`}
-                      >
-                        {s.status === "succeeded" ? (
-                          <CircleCheck size={22} />
-                        ) : terminal(s.status) ? (
-                          <CircleAlert size={22} />
-                        ) : (
-                          <LoaderCircle size={22} className="spin" />
-                        )}
-                        <span>
-                          {display.label}
-                          {!terminal(s.status) &&
-                          !display.waiting &&
-                          typeof s.progress?.percent === "number"
-                            ? ` · ${s.progress.percent}%`
-                            : ""}
-                        </span>
-                      </div>
-                    )}
-                    <div className="task-copy">
-                      {s.outputs[0] && <span className="playback-size-note">Fullscreen viewing · up to 720p</span>}
-                      <span className="task-kind">
-                        {s.kind === "swap"
-                          ? "Character swap"
-                          : "Generated video"}{" "}
-                        · {seconds(s.seconds)}
-                      </span>
-                      <div className="task-title">
-                        <h3>{s.prompt}</h3>
-                        <span
-                          className={`status-pill ${terminal(s.status) ? `status-${s.status}` : "status-running"}`}
-                          role="status"
-                          aria-live="polite"
-                        >
-                          {display.label}
-                        </span>
-                      </div>
-                      <p>{display.detail}</p>
-                      {!terminal(s.status) && <TaskTimer task={s} />}
-                      {s.refunded && (
-                        <span className="task-wait-note">
-                          {credits(s.costCents)} returned to your balance.
-                        </span>
-                      )}
-                      <div className="task-actions">
-                        {s.outputs[0] && (
-                          <a href={`${s.outputs[0].url}?download=1`} download>
-                            Download video
-                          </a>
-                        )}
-                        {terminal(s.status) && (
-                          <button
-                            type="button"
-                            className="task-delete"
-                            onClick={() => void remove(s)}
-                          >
-                            <Trash2 size={12} />
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              {items.map((s) => (
+                <TaskCard
+                  key={s.id}
+                  task={s}
+                  playing={playing === s.id}
+                  onPlay={(on) => setPlaying(on ? s.id : null)}
+                  onRemove={() => void remove(s)}
+                />
+              ))}
             </div>
           ) : (
             <div className="studio-example">

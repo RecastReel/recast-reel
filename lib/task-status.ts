@@ -36,3 +36,16 @@ export function taskDisplay(task: TaskState) {
  else detail = task.progress?.stage === 'queued' ? 'Processing your video.' : task.progress?.message || task.message || 'Processing your video.';
  return { phase, label, detail, waiting, waitingLabel: (phase === 'waiting_for_gpu' ? 'Waiting for GPU capacity' : 'Waiting to start') + inLine };
 }
+
+/** How full the progress bar looks while a video renders. MadeByCue's
+ * percent moves in coarse steps and can sit still for minutes, so between
+ * steps the bar keeps creeping: up to 5 points past the last reported
+ * percent, and along the expected duration, easing toward 99 so it never
+ * claims to be done before it is. Times are in seconds. */
+export function shownPercent({ reported = 0, reportedFor, elapsed, expected }: {
+ reported?: number; reportedFor: number; elapsed: number; expected: number;
+}) {
+ const creep = reported + 5 * (1 - Math.exp(-Math.max(0, reportedFor) / 120));
+ const onTime = 99 * (1 - Math.exp((-2 * Math.max(0, elapsed)) / Math.max(60, expected)));
+ return Math.max(reported, Math.min(99, Math.max(creep, onTime)));
+}
