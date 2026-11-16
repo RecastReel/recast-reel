@@ -280,6 +280,9 @@ async function createSwap(req: NextRequest, userId: string) {
         prompt,
         seconds,
         costCents: cents,
+        // The timestamp column has no timezone and Drizzle reads it as UTC.
+        // Write UTC explicitly so the database session timezone cannot shift it.
+        createdAt: new Date(),
       })
       .returning();
     return row!;
