@@ -80,11 +80,15 @@ async function savePurchase(purchase: PurchaseInfo) {
     if (page.length < 100) break;
    }
    if (monthly) {
-    const paidIds = new Set(payments.filter((payment) => payment.type === 'payment' && payment.id &&
-     Number(payment.gross) > 0).map((payment) => String(payment.id)));
-    creditCents = paidIds.size * MONTHLY_CREDITS * 100;
+    const completedPayments = [...new Map(payments.filter((payment) => payment.type === 'payment' && payment.id &&
+     payment.gross != null && Number(payment.gross) >= 0).map((payment) => [String(payment.id), payment])).values()];
+    creditCents = completedPayments.length * MONTHLY_CREDITS * 100;
+    // Monetary refunds apply to purchased credits; coupon-funded credits carry over.
+    const refundableCents = completedPayments.filter((payment) => Number(payment.gross) > 0).length * MONTHLY_CREDITS * 100;
+    refundedCreditCents = refundedCredits(creditCents, payments, refundableCents);
+   } else if (topup) {
+    refundedCreditCents = refundedCredits(creditCents, payments);
    }
-   if (creditCents > 0 || topup) refundedCreditCents = refundedCredits(creditCents, payments);
   }
   await tx.insert(user_fs_entitlement)
    .values({ ...record, userId: owner.id, expiration: purchase.expiration, createdAt: purchase.created, creditCents, refundedCreditCents, revoked: Boolean(topup && purchase.canceled) })

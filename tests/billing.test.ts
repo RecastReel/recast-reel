@@ -132,6 +132,19 @@ test('prepaid billing lifecycle in an isolated database', async (t) => {
    await syncLicense(subscription);
    await syncLicense(subscription);
    assert.equal((await planStatus('buyer')).remainingCents, 24000);
+   // A completed checkout covered by a coupon grants the same plan credits.
+   const discounted = { ...first, id: '1003', gross: 0 };
+   payments = [discounted, discounted];
+   await syncLicense(subscription);
+   await syncLicense(subscription);
+   assert.equal((await planStatus('buyer')).remainingCents, 16000);
+   // Refunding a later paid renewal preserves the coupon-funded allocation.
+   payments = [discounted, first, payment('refund', -99, subscription)];
+   await syncLicense(subscription);
+   assert.equal((await planStatus('buyer')).remainingCents, 16000);
+   payments.push(payment('disputed', 99, subscription));
+   await syncLicense(subscription);
+   assert.equal((await planStatus('buyer')).remainingCents, 8000);
   });
  } finally {
   await (db as unknown as { $client: { close(): Promise<void> } }).$client.close();
