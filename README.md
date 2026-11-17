@@ -7,8 +7,6 @@ reference images, or upload a clip and swap a new character into it.
 
 Click the image to watch the character swap example from the landing page.
 
-Use the hosted version at [recastreel.com](https://recastreel.com), or run it yourself.
-
 ## Run it locally
 
 1. Get an API key from [madebycue.dev](https://www.madebycue.dev).
