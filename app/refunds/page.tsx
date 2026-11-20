@@ -14,7 +14,7 @@ export default function Refunds() {
    <p>Credits successfully consumed to generate a video are non-refundable because the processing service has already been delivered. AI results can vary; dissatisfaction with a successfully generated result alone does not qualify consumed credits for a refund. This does not exclude remedies for a defective service or any rights required by law.</p>
 
    <h2>Unused credits</h2>
-   <p>You may request a refund for unused purchased credits within 14 days of purchase. If some credits from that purchase have been consumed, only the unused portion is eligible. Refunds are calculated using the price actually paid for the eligible unused portion, including the proportional service fee, if charged. Any applicable tax adjustment is handled by Freemius. Promotional or free credits are not refundable for cash.</p>
+   <p>You may request a refund for unused purchased credits within 14 days of purchase. If some credits from that purchase have been consumed, only the unused portion is eligible. Your refund is based on the amount you paid for the eligible unused credits, excluding non-refundable processing fees where permitted by law. Any applicable tax adjustment is handled by Freemius. Promotional or free credits are not refundable for cash.</p>
    <p>Credits approved for a refund are removed from your balance and cannot subsequently be used. We verify purchase and usage records before processing a refund. Credits are not otherwise redeemable or transferable for cash.</p>
 
    <h2>Failed generations</h2>

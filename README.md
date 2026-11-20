@@ -58,8 +58,8 @@ Setup:
    to `https://<your-domain>/api/billing/redirect`.
 5. In **Plans → Refund Policy**, set a 14-day refund window and enable
    **Limit refunds to unused credits for usage-based features**. Our `/refunds`
-   policy allows unused purchased credits plus proportional service fees to be
-   refunded. Review usage and restore/remove the eligible credits before approving
+   policy allows refunds for eligible unused purchased credits, excluding
+   non-refundable processing fees where permitted by law. Review usage and restore/remove the eligible credits before approving
    a monetary refund through Freemius. Payment webhooks reconcile full and partial
    refunds from authoritative payment records; replaying a webhook cannot add credit.
 6. Run `npm run db:migrate` before starting the updated application. The migration
