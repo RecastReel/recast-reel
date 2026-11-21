@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { Fragment } from 'react';
-import { ArrowRight, Check, Clock, Download, Film, Plus, ReceiptText, RotateCcw, Scissors, Sparkles, UserRound, Wallet } from 'lucide-react';
-import { VIDEO_FEATURES } from '../lib/options';
+import { ArrowRight, Clock, Download, Film, Plus, ReceiptText, RotateCcw, Scissors, Sparkles, UserRound, Wallet } from 'lucide-react';
 import { FAQ, SHOWCASE } from '../lib/catalog';
 import { MonthlyPlanCard } from './billing-buttons';
+import { FreePlanCard } from './free-plan-card';
 import { currentSession } from '../lib/session';
 import { LandingMotion } from './landing-motion';
 import { LogoMark } from './logo';
@@ -105,16 +105,9 @@ export default async function Landing() {
       <p>Bring your own MadeByCue API key or subscribe for monthly credits.</p>
      </div>
      <div className="pricing" data-reveal>
-      <div className="price-card">
-       <h3>Bring your own key</h3>
-       <div className="price"><strong>Free</strong></div>
-       <p className="price-lead">Generation is billed by MadeByCue.</p>
-       <ul>
-        <li><Check size={16} aria-hidden="true" />Bring your own API key</li>
-        {VIDEO_FEATURES.map((feature) => <li key={feature}><Check size={16} aria-hidden="true" />{feature}</li>)}
-       </ul>
+      <FreePlanCard>
        <Link className="button-primary" href={session ? '/account#api-key' : '/login?mode=signup&next=%2Faccount%23api-key'}>Continue free</Link>
-      </div>
+      </FreePlanCard>
       <MonthlyPlanCard signedIn={Boolean(session)} />
      </div>
     </section>

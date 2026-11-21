@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 
-export function CueKeyForm({ saved }: { saved: boolean }) {
+export function CueKeyForm({ saved = false, onSaved }: { saved?: boolean; onSaved?: () => void }) {
+ const inputId = useId();
  const [hasKey, setHasKey] = useState(saved);
  const [busy, setBusy] = useState(false);
  const [message, setMessage] = useState('');
@@ -26,6 +27,7 @@ export function CueKeyForm({ saved }: { saved: boolean }) {
    form.reset();
    setHasKey(true);
    setMessage('API key saved. New videos will use this key.');
+   onSaved?.();
   } catch (error) {
    setError(true);
    setMessage(error instanceof Error ? error.message : 'Could not save your API key.');
@@ -34,18 +36,15 @@ export function CueKeyForm({ saved }: { saved: boolean }) {
   }
  }
 
- return <section className="panel" id="api-key">
-  <h2>MadeByCue API key</h2>
-  <p className="muted">Use your own key to create videos without a Recast Reel subscription. MadeByCue charges your account for generation.</p>
-  <p><a href="https://www.madebycue.dev" target="_blank" rel="noreferrer">Get a key from MadeByCue ↗</a></p>
-  <form className="cue-key-form" onSubmit={save}>
-   <label htmlFor="cue-key">{hasKey ? 'Replace your API key' : 'API key'}</label>
-   <input id="cue-key" name="key" type="password" placeholder={hasKey ? 'API key saved' : 'Paste your MadeByCue API key'} autoComplete="off" spellCheck={false} required maxLength={1024} />
+ return <form className="cue-key-form" onSubmit={save}>
+   <label htmlFor={inputId}>{hasKey ? 'Replace your API key' : 'API key'}</label>
+   <input id={inputId} name="key" type="password" placeholder={hasKey ? 'API key saved' : 'Paste your MadeByCue API key'} autoComplete="off" spellCheck={false} required maxLength={1024} />
    <div className="panel-actions">
     <button className="button-primary" disabled={busy}>{busy ? 'Saving…' : 'Save API key'}</button>
-    {hasKey && <Link className="button-quiet" href="/studio">Open studio</Link>}
+    {hasKey && (onSaved
+     ? <button type="button" className="button-quiet" onClick={onSaved}>Open studio</button>
+     : <Link className="button-quiet" href="/studio">Open studio</Link>)}
    </div>
    {message && <p role={error ? 'alert' : 'status'} className={error ? 'form-error' : 'muted'}>{message}</p>}
-  </form>
- </section>;
+ </form>;
 }

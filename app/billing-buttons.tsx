@@ -22,7 +22,7 @@ async function openBillingLink(kind: 'checkout' | 'portal', fallback: string) {
 
 const PLAN_FEATURES = [...VIDEO_FEATURES, 'Customer support by email'];
 
-export function MonthlyPlanCard({ signedIn = true }: { signedIn?: boolean }) {
+export function MonthlyPlanCard({ signedIn = true, subscribed = false }: { signedIn?: boolean; subscribed?: boolean }) {
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
  async function subscribe() {
@@ -39,7 +39,9 @@ export function MonthlyPlanCard({ signedIn = true }: { signedIn?: boolean }) {
   <ul>
    {PLAN_FEATURES.map((f) => <li key={f}><Check size={16} aria-hidden="true" />{f}</li>)}
   </ul>
-  {signedIn ? <button className="button-primary" disabled={busy} onClick={() => void subscribe()}>{busy ? 'Opening checkout…' : 'Subscribe'}</button> : <Link className="button-primary" href="/login?next=/account">Get started</Link>}
+  {subscribed ? <Link className="button-primary" href="/account#billing">Manage billing</Link>
+   : signedIn ? <button className="button-primary" disabled={busy} onClick={() => void subscribe()}>{busy ? 'Opening checkout…' : 'Subscribe'}</button>
+   : <Link className="button-primary" href="/login?next=/account">Get started</Link>}
   {error && <p className="form-error" role="alert">{error}</p>}
  </div>;
 }

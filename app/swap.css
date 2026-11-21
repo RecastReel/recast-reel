@@ -78,11 +78,22 @@
 .swap .dock-status, .swap .dock-error { margin: 12px 4px 2px; padding: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .swap .dock-error { color: var(--red-ink); }
 
-.paywall { display: grid; gap: 8px; padding: clamp(24px, 5vw, 36px); border-radius: var(--radius-md); background: var(--raised); box-shadow: var(--shadow-large), 0 0 0 1px var(--line); text-align: center; }
-.paywall strong { font-size: var(--text-h4); font-weight: var(--weight-bold); letter-spacing: -.02em; }
-.paywall p { margin: 0 auto 12px; max-width: 420px; color: var(--muted); font-size: var(--text-label); line-height: 1.6; }
-.paywall > a { justify-self: center; text-decoration: underline; text-underline-offset: 3px; }
-.paywall .price-card { padding: 20px 0 0; border-top: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; text-align: left; }
+.composer-stage--billing { width: min(920px, 100%); }
+.billing-notice { margin: 0 auto 16px; max-width: 480px; color: var(--muted); line-height: 1.6; text-align: center; }
+@media (min-width: 720px) {
+ .pricing.studio-pricing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.cue-key-dialog { width: min(520px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; overflow: auto; border: 0; color: var(--ink); }
+.cue-key-dialog[open] { display: grid; gap: 16px; }
+.cue-key-dialog::backdrop { background: rgb(0 0 0 / .6); backdrop-filter: blur(6px); }
+.cue-key-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cue-key-dialog .cue-key-dialog-header h2 { margin: 0; color: var(--ink); font-size: var(--text-h3); font-weight: var(--weight-bold); letter-spacing: -.025em; }
+.cue-key-dialog-header .button-quiet { flex: none; width: 40px; padding: 0; }
+.cue-key-dialog p { margin: 0; }
+.cue-key-dialog > p, .cue-key-dialog ol { color: var(--muted); }
+.cue-key-dialog ol { display: grid; gap: 10px; margin: 0; padding-inline-start: 22px; line-height: 1.6; }
+.cue-key-dialog ol a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.cue-key-dialog .cue-key-form { padding-top: 16px; border-top: 1px solid var(--line); }
 
 /* My videos. */
 .swaps { max-width: 1040px; margin: 0 auto; }

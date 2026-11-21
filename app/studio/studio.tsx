@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
@@ -26,8 +27,7 @@ import {
   type Swap,
   type UploadedMedia,
 } from "../../lib/swap-client";
-import { MONTHLY_CREDITS } from "../../lib/monthly-plan";
-import { MonthlyPlanCard } from "../billing-buttons";
+import { StudioBillingOptions } from "./billing-options";
 import { TaskCard, terminal } from "./task-card";
 import { TrimDialog } from "./trim-dialog";
 import "../swap.css";
@@ -380,18 +380,17 @@ export function Studio({
             <h1>What are you making today?</h1>
             {plan.billing && plan.active && (
               <p className="credits-left">
-                {credits(plan.remainingCents)} left · <a href="/account">Manage credits</a>
+                {credits(plan.remainingCents)} left · <Link href="/account#billing">Manage credits</Link>
               </p>
             )}
           </section>
-          <section className="composer-stage" aria-label="Composer">
+          <section className={plan.active ? "composer-stage" : "composer-stage composer-stage--billing"} aria-label={plan.active ? "Composer" : "Choose a plan"}>
             {!plan.active ? (
-              <div className="paywall">
-                <strong>Add credits to start creating</strong>
-                <p>{purchased ? 'Your payment is being confirmed. If your balance has not updated, refresh shortly or contact support.' : plan.periodEnd ? `You’ve used your available credits. Your next payment adds ${MONTHLY_CREDITS} more.` : `Subscribe to get ${MONTHLY_CREDITS} credits each paid month.`}</p>
-                {plan.periodEnd ? <a href="/account">Manage billing</a> : <MonthlyPlanCard />}
-                <a href="/account#api-key">Use your own MadeByCue API key</a>
-              </div>
+              <StudioBillingOptions
+                purchased={purchased}
+                subscribed={Boolean(plan.periodEnd)}
+                onKeySaved={() => void refreshPlan()}
+              />
             ) : (
               <>
                 <div

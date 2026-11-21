@@ -231,6 +231,13 @@
 .account-balance p { margin: 0; }
 .account .price-card { padding: 4px 0 0; border-radius: 0; background: none; box-shadow: none; }
 .account .panel-actions { padding-top: 4px; }
+.account-hosted { max-width: 1000px; }
+.account-billing { display: grid; gap: 16px; align-items: start; }
+.account-billing > h2 { grid-column: 1 / -1; margin: 4px 0 0; font-size: var(--text-h2); letter-spacing: -.03em; }
+.billing-option-title { margin: 0; font-size: var(--text-h4); font-weight: var(--weight-semibold); }
+@media (min-width: 761px) {
+ .account-hosted .account-billing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* Legal. */
 .legal { max-width: 720px; margin: 0 auto; padding: clamp(40px, 7vw, 80px) 24px 48px; }
@@ -297,7 +304,9 @@
 @keyframes motion-fallback { to { opacity: 1; } }
 
 
-#api-key { scroll-margin-top: 90px; }
+#billing, #api-key { scroll-margin-top: 90px; }
 .cue-key-form { display: grid; gap: 10px; }
 .cue-key-form input { width: min(100%, 460px); min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--canvas); color: var(--ink); font: inherit; }
 .cue-key-form .panel-actions { margin-top: 4px; }
+.cue-key-help { font-size: var(--text-label); }
+.cue-key-help a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
