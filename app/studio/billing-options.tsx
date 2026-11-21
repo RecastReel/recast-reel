@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { X } from "lucide-react";
+import { ArrowUpRight, X } from "lucide-react";
 import { CueKeyForm } from "../account/cue-key-form";
 import { MonthlyPlanCard } from "../billing-buttons";
 import { FreePlanCard } from "../free-plan-card";
@@ -39,12 +39,10 @@ export function StudioBillingOptions({
             <X size={18} aria-hidden="true" />
           </button>
         </header>
-        <p id="cue-key-dialog-intro">MadeByCue provides the video API and bills you directly for generation.</p>
-        <ol>
-          <li><a href="https://www.madebycue.dev/signup" target="_blank" rel="noreferrer">Create a MadeByCue account</a> or sign in if you already have one.</li>
-          <li><a href="https://www.madebycue.dev/billing" target="_blank" rel="noreferrer">Add credits in MadeByCue Billing</a> to pay for video generation.</li>
-          <li><a href="https://www.madebycue.dev/keys" target="_blank" rel="noreferrer">Create and copy an API key</a>, then paste it below.</li>
-        </ol>
+        <p id="cue-key-dialog-intro">Set up your account on MadeByCue, then paste and save your API key here. MadeByCue bills you directly for video generation.</p>
+        <a className="button-quiet cue-key-provider-link" href="https://www.madebycue.dev/" target="_blank" rel="noreferrer" aria-label="Open madebycue.dev in a new tab">
+          Open madebycue.dev <ArrowUpRight size={16} aria-hidden="true" />
+        </a>
         <CueKeyForm onSaved={onKeySaved} />
       </dialog>
     </>

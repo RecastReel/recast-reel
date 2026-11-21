@@ -90,9 +90,8 @@
 .cue-key-dialog .cue-key-dialog-header h2 { margin: 0; color: var(--ink); font-size: var(--text-h3); font-weight: var(--weight-bold); letter-spacing: -.025em; }
 .cue-key-dialog-header .button-quiet { flex: none; width: 40px; padding: 0; }
 .cue-key-dialog p { margin: 0; }
-.cue-key-dialog > p, .cue-key-dialog ol { color: var(--muted); }
-.cue-key-dialog ol { display: grid; gap: 10px; margin: 0; padding-inline-start: 22px; line-height: 1.6; }
-.cue-key-dialog ol a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.cue-key-dialog > p { color: var(--muted); }
+.cue-key-provider-link { justify-self: start; }
 .cue-key-dialog .cue-key-form { padding-top: 16px; border-top: 1px solid var(--line); }
 
 /* My videos. */
