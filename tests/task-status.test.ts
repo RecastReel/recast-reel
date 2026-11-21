@@ -46,7 +46,7 @@ test('final and billing states override stale queue and progress fields', () => 
 });
 test('public API forwards processing_state without rewriting lifecycle status', () => {
  const row: typeof swaps.$inferSelect = {
-  id: 'test-task', kind: 'swap', userId: 'user', taskId: 'upstream-task',
+  id: 'test-task', kind: 'swap', userId: 'user', taskId: 'upstream-task', cueKeyId: null,
   idempotencyKey: 'test-key', prompt: 'Swap the person', seconds: 40, costCents: 1,
   status: 'queued', refunded: false, createdAt: new Date(), updatedAt: new Date(), deletedAt: null,
   task: { processing_state: 'processing', progress: { stage: 'creating' } },

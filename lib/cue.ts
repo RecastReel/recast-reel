@@ -1,9 +1,10 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { authSecret, isProduction, localMode } from "./config";
 import { mp4Duration } from "./mp4";
 
-/** Server-only MadeByCue client. Every customer request uses the platform
- * key; customers never see or supply one. */
+/** Keep provider credentials scoped to a single async request or task. */
+export const cueCredential = new AsyncLocalStorage<{ id: string; key: string } | null>();
 const BASE = process.env.CUE_API_URL || "https://www.madebycue.dev";
 
 export class HttpError extends Error {
@@ -30,16 +31,17 @@ export function platformKey() {
 }
 
 export async function upstream(path: string, init: RequestInit = {}) {
+  const personal = cueCredential.getStore();
   const response = await fetch(BASE + path, {
     ...init,
     cache: "no-store",
     redirect: init.redirect ?? "follow",
-    headers: { ...init.headers, Authorization: `Bearer ${platformKey()}` },
+    headers: { ...init.headers, Authorization: `Bearer ${cueCredential.getStore()?.key ?? platformKey()}` },
     signal: init.signal ?? AbortSignal.timeout(120000),
   });
   if (!response.ok && !(response.status >= 300 && response.status < 400)) {
     const body = await response.json().catch(() => ({}));
-    if (localMode() && response.status === 402) {
+    if ((personal || localMode()) && response.status === 402) {
       const actions: { type?: string; url?: string }[] = Array.isArray(body?.error?.actions) ? body.error.actions : [];
       const billingAction = actions.find((action) => action?.type === "billing" && typeof action.url === "string");
       const url = billingAction?.url ? URL.parse(billingAction.url) : null;
@@ -58,6 +60,10 @@ export async function upstream(path: string, init: RequestInit = {}) {
         missingCredits,
       );
     }
+    if (personal && [401, 403].includes(response.status))
+      throw new HttpError("MadeByCue rejected your API key. Check the key in Account.", 403);
+    if (personal && response.status !== 404 && response.status !== 429)
+      throw new HttpError("MadeByCue could not complete the request. Check your API key and try again.", response.status >= 500 ? 502 : response.status);
     // Provider billing and key problems are ours to fix, not the customer's.
     if ([401, 402, 403].includes(response.status)) {
       console.error("MadeByCue rejected the platform key", {
@@ -169,7 +175,7 @@ export async function uploadedVideoSeconds(mediaUrl: string): Promise<number> {
     : BASE + new URL(mediaUrl, BASE).pathname;
   const auth: Record<string, string> = signed
     ? {}
-    : { Authorization: `Bearer ${platformKey()}` };
+    : { Authorization: `Bearer ${cueCredential.getStore()?.key ?? platformKey()}` };
   const range = async (start: number, end: number) => {
     const response = await fetch(target, {
       headers: { ...auth, Range: `bytes=${start}-${end}` },

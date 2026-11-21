@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Fragment } from 'react';
-import { ArrowRight, Clock, Download, Film, Plus, ReceiptText, RotateCcw, Scissors, Sparkles, UserRound, Wallet } from 'lucide-react';
+import { ArrowRight, Check, Clock, Download, Film, Plus, ReceiptText, RotateCcw, Scissors, Sparkles, UserRound, Wallet } from 'lucide-react';
+import { VIDEO_FEATURES } from '../lib/options';
 import { FAQ, SHOWCASE } from '../lib/catalog';
-import { MONTHLY_CREDITS, MONTHLY_PRICE_USD } from '../lib/monthly-plan';
 import { MonthlyPlanCard } from './billing-buttons';
 import { currentSession } from '../lib/session';
 import { LandingMotion } from './landing-motion';
@@ -102,16 +102,18 @@ export default async function Landing() {
     <section id="pricing" className="section" aria-labelledby="pricing-title">
      <div className="section-head" data-reveal>
       <h2 id="pricing-title">Pricing.</h2>
-      <p>One plan. Pay for the videos you make, and keep what you don’t use.</p>
+      <p>Bring your own MadeByCue API key or subscribe for monthly credits.</p>
      </div>
      <div className="pricing" data-reveal>
-      <div className="pricing-explainer">
-       <h3>How credits work</h3>
-       <p>The US${MONTHLY_PRICE_USD} plan adds {MONTHLY_CREDITS} credits each paid month. One credit is worth US$1 of video, and you see the exact cost before anything starts.</p>
-       <dl className="rate-list">
-        <div><dt>Generated video</dt><dd>~0.21 credits / sec</dd><span>A 10 second video is about 2.10 credits.</span></div>
-        <div><dt>Character swap</dt><dd>from ~0.20 credits / sec</dd><span>A 90 second swap is about 18 credits.</span></div>
-       </dl>
+      <div className="price-card">
+       <h3>Bring your own key</h3>
+       <div className="price"><strong>Free</strong></div>
+       <p className="price-lead">Generation is billed by MadeByCue.</p>
+       <ul>
+        <li><Check size={16} aria-hidden="true" />Bring your own API key</li>
+        {VIDEO_FEATURES.map((feature) => <li key={feature}><Check size={16} aria-hidden="true" />{feature}</li>)}
+       </ul>
+       <Link className="button-primary" href={session ? '/account#api-key' : '/login?mode=signup&next=%2Faccount%23api-key'}>Continue free</Link>
       </div>
       <MonthlyPlanCard signedIn={Boolean(session)} />
      </div>

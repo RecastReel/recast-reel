@@ -1,7 +1,8 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { monthlyPlanId } from './monthly-plan';
 import { billingEnabled } from './config';
 import { getDb, type Db } from './db';
+import { findCueKey } from "./cue-keys";
 import { swaps, user_fs_entitlement } from './db/schema';
 
 
@@ -42,7 +43,7 @@ export async function planStatus(userId: string, executor?: Pick<Db, 'select'>):
   return sum + Math.max(0, row.creditCents + legacy - row.refundedCreditCents);
  }, 0);
  const [used] = await db.select({ cents: sql<number>`coalesce(sum(${swaps.costCents}), 0)::int` }).from(swaps)
-  .where(and(eq(swaps.userId, userId), eq(swaps.refunded, false)));
+  .where(and(eq(swaps.userId, userId), eq(swaps.refunded, false), isNull(swaps.cueKeyId)));
  const usedCents = Number(used?.cents ?? 0);
  const monthly = rows.find((row) => row.fsPlanId === monthlyPlanId() && row.type === 'subscription' && !row.revoked &&
   (row.expiration ?? row.renewalDate ?? new Date(0)) > new Date());
@@ -55,4 +56,9 @@ export async function planStatus(userId: string, executor?: Pick<Db, 'select'>):
   usedCents,
   remainingCents: Math.max(0, granted - usedCents),
  };
+}
+
+export async function studioPlanStatus(userId: string): Promise<PlanStatus> {
+ const [plan, key] = await Promise.all([planStatus(userId), findCueKey(userId)]);
+ return key ? { ...plan, billing: false, active: true, remainingCents: Number.MAX_SAFE_INTEGER } : plan;
 }

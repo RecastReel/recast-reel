@@ -28,5 +28,5 @@ export const FAQ = [
  { q: 'What happens if a video fails?', a: 'Its credits go straight back into your balance. You are never charged for a video that does not finish.' },
  { q: 'Do unused credits roll over?', a: 'Yes. Purchased credits don’t expire and remain available without a subscription.' },
  { q: 'How long can I download my videos?', a: 'Finished videos stay available for 7 days, which leaves plenty of time to download them. Save the ones you want to keep.' },
- { q: 'Is there a subscription?', a: 'Yes. The plan renews monthly. You can cancel through Manage billing in your account.' },
+ { q: 'Is there a subscription?', a: 'Pro renews monthly. You can cancel through Manage billing in your account. If you bring your own MadeByCue API key, you can create videos without a Pro subscription.' },
 ];

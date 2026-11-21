@@ -39,7 +39,8 @@ test('prepaid billing lifecycle in an isolated database', async (t) => {
  Object.assign(process.env, { NODE_ENV: 'test', DATA_DIR: directory, LOCAL_MODE: '0', FREEMIUS_SECRET_KEY: 'test-secret-key-at-least-32-characters-long', FREEMIUS_PUBLIC_KEY: 'test-public-key', FREEMIUS_PRODUCT_ID: '12345', FREEMIUS_API_KEY: 'test-only', FREEMIUS_TOPUP_PLAN_ID: 'topup', FREEMIUS_PLAN_ID: 'legacy', FREEMIUS_PRICING_ID_TOPUP_25: 'pricing-25' });
  const { getDb } = await import('../lib/db');
  const { user, swaps, user_fs_entitlement } = await import('../lib/db/schema');
- const { planStatus } = await import('../lib/plan');
+ const { decryptCueKey, findCueKey, saveCueKey } = await import('../lib/cue-keys');
+ const { planStatus, studioPlanStatus } = await import('../lib/plan');
  const { syncLicense, deleteLicense, freemius, checkoutLink } = await import('../lib/freemius');
  const { handleFreemiusWebhook } = await import('../lib/billing-api');
  const db = await getDb();
@@ -56,6 +57,27 @@ test('prepaid billing lifecycle in an isolated database', async (t) => {
  try {
   await db.insert(user).values({ id: 'buyer', name: 'Buyer', email: 'buyer@example.com' });
   assert.equal((await planStatus('buyer')).active, false);
+  await t.test('personal credentials are encrypted, account scoped, and excluded from hosted credit spend', async () => {
+   await db.insert(user).values({ id: 'byok', name: 'Creator', email: 'creator@example.com' });
+   await saveCueKey('byok', 'first-test-key');
+   const first = await findCueKey('byok');
+   assert.ok(first);
+   assert.equal(first.encryptedKey.includes('first-test-key'), false);
+   assert.equal(decryptCueKey(first), 'first-test-key');
+   assert.equal(await findCueKey('buyer', first.id), undefined);
+   assert.equal((await studioPlanStatus('byok')).active, true);
+   await saveCueKey('byok', 'replacement-test-key');
+   const replacement = await findCueKey('byok');
+   assert.ok(replacement);
+   assert.equal(decryptCueKey(replacement), 'replacement-test-key');
+   assert.equal((await findCueKey('byok', first.id))?.active, false);
+   await db.insert(swaps).values({
+    id: 'personal-video', userId: 'byok', cueKeyId: first.id,
+    idempotencyKey: 'personal-video-test', kind: 'generate', prompt: 'Test video',
+    seconds: 5, costCents: 1000,
+   });
+   assert.equal((await planStatus('byok')).usedCents, 0);
+  });
   await t.test('verified purchases grant once; repeat purchases accumulate', async () => {
    payments = [payment('payment', 30.5)];
    await syncLicense(license);

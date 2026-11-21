@@ -29,7 +29,10 @@ You don't need a Recast Reel account or subscription; videos are charged to your
 
 ## Run it in production
 
-Production adds accounts, prepaid credit purchases and a hosted database. The app requires
+Production adds accounts, a monthly plan and a hosted database. Users can also save their own
+MadeByCue API key in Account and pay MadeByCue directly for generation. Saved keys are encrypted
+using the server’s `BETTER_AUTH_SECRET`. Keep that secret stable so saved keys and existing jobs
+remain accessible. The app requires
 the services below to be configured. See `.env.example` for each setting.
 
 | Service                                | Used for               | Settings                                                                                                                        |

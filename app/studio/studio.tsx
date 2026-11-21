@@ -390,6 +390,7 @@ export function Studio({
                 <strong>Add credits to start creating</strong>
                 <p>{purchased ? 'Your payment is being confirmed. If your balance has not updated, refresh shortly or contact support.' : plan.periodEnd ? `You’ve used your available credits. Your next payment adds ${MONTHLY_CREDITS} more.` : `Subscribe to get ${MONTHLY_CREDITS} credits each paid month.`}</p>
                 {plan.periodEnd ? <a href="/account">Manage billing</a> : <MonthlyPlanCard />}
+                <a href="/account#api-key">Use your own MadeByCue API key</a>
               </div>
             ) : (
               <>

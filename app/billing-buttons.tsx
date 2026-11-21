@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { MONTHLY_CREDITS, MONTHLY_PRICE_USD } from '../lib/monthly-plan';
+import { VIDEO_FEATURES } from '../lib/options';
 import { authClient } from '../lib/auth-client';
 
 /** Asks the server for a Freemius link (checkout or customer portal) and opens it. */
@@ -19,7 +20,7 @@ async function openBillingLink(kind: 'checkout' | 'portal', fallback: string) {
  }
 }
 
-const PLAN_FEATURES = ['Video generation up to 15 seconds', 'Character swaps on videos up to 10 minutes long', '7 days to download finished videos', 'Customer support by email'];
+const PLAN_FEATURES = [...VIDEO_FEATURES, 'Customer support by email'];
 
 export function MonthlyPlanCard({ signedIn = true }: { signedIn?: boolean }) {
  const [busy, setBusy] = useState(false);

@@ -1,3 +1,5 @@
+import { findCueKey } from '../../lib/cue-keys';
+import { CueKeyForm } from './cue-key-form';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { localMode } from '../../lib/config';
@@ -14,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export default async function Account() {
  const session = await currentSession();
  if (!session) redirect('/login?next=/account');
- const plan = await planStatus(session.user.id);
+ const [plan, key] = await Promise.all([planStatus(session.user.id), findCueKey(session.user.id)]);
  return (
   <div className="site">
    <SiteHeader signedIn />
@@ -26,10 +28,11 @@ export default async function Account() {
       <div className="account-profile"><p>{session.user.email}</p><SignOutButton /></div>
      </>}
     </section>
+    <CueKeyForm saved={Boolean(key)} />
     <section className="panel">
      <h2>Credits</h2>
      {!plan.billing ? <>
-      <p className="muted">Running locally with billing off. Videos are charged to the MadeByCue API key in CUE_API_KEY.</p>
+      <p className="muted">Running locally with billing off. {key ? "New videos use your saved MadeByCue key." : "Videos use the MadeByCue key in CUE_API_KEY."}</p>
       <div className="panel-actions"><Link href="/studio" className="button-primary">Open studio</Link></div>
      </> : <>
       <div className="account-balance">

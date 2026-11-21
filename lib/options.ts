@@ -2,6 +2,11 @@
 export const GENERATE_SECONDS = [5, 10, 15];
 export const GENERATE_RATIOS = ['16:9', '9:16', '1:1'];
 export const MAX_REFERENCES = 4;
+export const VIDEO_FEATURES = [
+ 'Video generation up to 15 seconds',
+ 'Character swaps on videos up to 10 minutes long',
+ '7 days to download finished videos',
+];
 /** US cents as credits (1 credit = $1), e.g. 1895 → "18.95 credits". */
 export function credits(cents: number) {
  const value = Math.max(0, Math.round(cents)) / 100;

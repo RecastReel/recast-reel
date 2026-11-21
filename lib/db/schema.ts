@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // Better Auth core tables.
@@ -75,6 +76,7 @@ export const swaps = pgTable('swaps', {
  kind: text('kind').$type<'swap' | 'generate'>().notNull().default('swap'),
  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
  taskId: text('task_id').unique(),
+ cueKeyId: text('cue_key_id').references(() => cueKeys.id),
  idempotencyKey: text('idempotency_key').notNull(),
  prompt: text('prompt').notNull(),
  seconds: integer('seconds').notNull(),
@@ -90,4 +92,14 @@ export const swaps = pgTable('swaps', {
 }, (t) => [
  index('swaps_user_time_idx').on(t.userId, t.createdAt),
  uniqueIndex('swaps_user_idempotency_idx').on(t.userId, t.idempotencyKey),
+]);
+
+/** Retain credential versions so existing jobs can still be read after rotation. */
+export const cueKeys = pgTable('cue_keys', {
+ id: text('id').primaryKey(),
+ userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+ encryptedKey: text('encrypted_key').notNull(),
+ active: boolean('active').notNull().default(true),
+}, (t) => [
+ uniqueIndex('cue_keys_active_user_idx').on(t.userId).where(sql`${t.active}`),
 ]);

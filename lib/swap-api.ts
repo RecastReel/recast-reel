@@ -1,9 +1,11 @@
+import { decryptCueKey, findCueKey } from "./cue-keys";
 import { localMode } from "./config";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import {
   cueJson,
+  cueCredential,
   HttpError,
   mediaToken,
   safeUploadUrl,
@@ -14,7 +16,7 @@ import {
 import { getDb } from "./db";
 import { swaps } from "./db/schema";
 import { GENERATE_RATIOS, GENERATE_SECONDS, MAX_REFERENCES, credits } from "./options";
-import { MAX_SWAP_SECONDS, MIN_SWAP_SECONDS, planStatus } from "./plan";
+import { MAX_SWAP_SECONDS, MIN_SWAP_SECONDS, planStatus, studioPlanStatus } from "./plan";
 import { sessionFor } from "./session";
 import { readJsonBody as body } from "./request-body";
 
@@ -47,13 +49,25 @@ async function requirePlan(
   return plan;
 }
 const uploadToken = (userId: string, key: string, mime: string) =>
-  mediaToken(userId, key, 0, `upload:${mime}`);
+  mediaToken(mediaOwner(userId), key, 0, `upload:${mime}`);
+function mediaOwner(userId: string) {
+  const credential = cueCredential.getStore();
+  return credential ? JSON.stringify([userId, credential.id]) : userId;
+}
+
+async function withTaskCredential<T>(row: Pick<typeof swaps.$inferSelect, "userId" | "cueKeyId">, request: () => Promise<T>) {
+  if (!row.cueKeyId) return cueCredential.run(null, request);
+  const key = await findCueKey(row.userId, row.cueKeyId);
+  if (!key) throw new HttpError("The API key for this video is unavailable.", 409);
+  return cueCredential.run({ id: key.id, key: decryptCueKey(key) }, request);
+}
+
 function ownUpload(userId: string, input: Record<string, unknown>) {
   if (
     typeof input.key !== "string" ||
     typeof input.mime !== "string" ||
     ![...IMAGE_TYPES, ...VIDEO_TYPES].includes(input.mime) ||
-    !verifyMedia(userId, input.key, 0, input.token, `upload:${input.mime}`)
+    !verifyMedia(mediaOwner(userId), input.key, 0, input.token, `upload:${input.mime}`)
   )
     throw new HttpError("Upload not found. Start the upload again.", 404);
   return input.key;
@@ -110,7 +124,7 @@ async function refresh(row: typeof swaps.$inferSelect) {
   }
   let task: Record<string, unknown>;
   try {
-    task = await (await upstream(`/api/v1/tasks/${row.taskId}`)).json();
+    task = await withTaskCredential(row, async () => (await upstream(`/api/v1/tasks/${row.taskId}`)).json());
   } catch (error) {
     // MadeByCue deletes tasks after 7 days; one that never finished is
     // over, and its hold was released, so return its cost.
@@ -186,7 +200,7 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
     if (references.length > MAX_REFERENCES)
       throw new HttpError(`Use up to ${MAX_REFERENCES} reference images.`);
     if (
-      !references.every((ref) => verifyMedia(userId, ref?.url, 0, ref?.token, "image"))
+      !references.every((ref) => verifyMedia(mediaOwner(userId), ref?.url, 0, ref?.token, "image"))
     )
       throw new HttpError("Upload the reference images again.");
     const task = {
@@ -208,9 +222,9 @@ export function buildRequest(userId: string, input: Record<string, unknown>) {
   }
   const video = input.video as Record<string, unknown> | undefined;
   const character = input.character as Record<string, unknown> | undefined;
-  if (!video || !verifyMedia(userId, video.url, video.seconds, video.token, "video"))
+  if (!video || !verifyMedia(mediaOwner(userId), video.url, video.seconds, video.token, "video"))
     throw new HttpError("Upload the source video again.");
-  if (!character || !verifyMedia(userId, character.url, 0, character.token, "image"))
+  if (!character || !verifyMedia(mediaOwner(userId), character.url, 0, character.token, "image"))
     throw new HttpError("Upload the character image again.");
   const prompt =
     text.length >= 3
@@ -250,6 +264,7 @@ async function createSwap(req: NextRequest, userId: string) {
     task: request,
     estimate,
   } = buildRequest(userId, await body(req));
+  const credential = cueCredential.getStore();
   const { costCents: cents, requiredCredits } = await estimatePrice(estimate);
   const db = await getDb();
   // Serialize reservations per user so two tabs can't overspend the credit.
@@ -264,8 +279,8 @@ async function createSwap(req: NextRequest, userId: string) {
     if (existing?.refunded && !existing.taskId)
       throw new HttpError("That attempt didn't go through. Start it again.", 409);
     if (existing) return existing;
-    const plan = await requirePlan(userId, tx);
-    if (cents > plan.remainingCents)
+    const plan = credential ? null : await requirePlan(userId, tx);
+    if (plan && cents > plan.remainingCents)
       throw new HttpError(
         `This video costs ${credits(cents)} and you have ${credits(plan.remainingCents)} left.`,
         402,
@@ -280,6 +295,7 @@ async function createSwap(req: NextRequest, userId: string) {
         prompt,
         seconds,
         costCents: cents,
+        cueKeyId: credential?.id,
         // The timestamp column has no timezone and Drizzle reads it as UTC.
         // Write UTC explicitly so the database session timezone cannot shift it.
         createdAt: new Date(),
@@ -288,10 +304,12 @@ async function createSwap(req: NextRequest, userId: string) {
     return row!;
   });
   if (reserved.taskId) return reserved;
+  if ((reserved.cueKeyId ?? null) !== (credential?.id ?? null))
+    throw new HttpError("Your API key changed. Start a new creation.", 409);
   try {
     const task = await cueJson<Record<string, unknown>>(
       "/api/v1/tasks",
-      { ...request, include_billing_link: localMode() },
+      { ...request, include_billing_link: Boolean(credential) || localMode() },
       { "Idempotency-Key": `swap-${reserved.id}` },
     );
     const [row] = await db
@@ -331,213 +349,217 @@ export async function handleSwap(req: NextRequest, segments: string[]) {
     const user = await currentUser(req);
     const db = await getDb();
 
-    if (path === "me" && req.method === "GET")
-      return json({
-        user: { email: user.email },
-        plan: await planStatus(user.id),
-      });
+    const usesCurrentKey = req.method === "POST" && (path === "swaps" || path === "swaps/estimate" || path.startsWith("uploads"));
+    const saved = usesCurrentKey ? await findCueKey(user.id) : undefined;
+    return await cueCredential.run(saved ? { id: saved.id, key: decryptCueKey(saved) } : null, async () => {
+      if (path === "me" && req.method === "GET")
+        return json({
+          user: { email: user.email },
+          plan: await studioPlanStatus(user.id),
+        });
 
-    if (path === "swaps" && req.method === "GET") {
-      const rows = await db
-        .select()
-        .from(swaps)
-        .where(and(eq(swaps.userId, user.id), isNull(swaps.deletedAt)))
-        .orderBy(desc(swaps.createdAt))
-        .limit(50);
-      const fresh = await Promise.all(
-        rows.map((row) => refresh(row).catch(() => row)),
-      );
-      return json({ swaps: fresh.map(publicSwap) });
-    }
-    if (path === "swaps" && req.method === "POST")
-      return json(publicSwap(await createSwap(req, user.id)), 201);
-    if (path === "swaps/estimate" && req.method === "POST") {
-      await requirePlan(user.id);
-      const { estimate } = buildRequest(user.id, await body(req));
-      const { costCents } = await estimatePrice(estimate);
-      return json({ costCents });
-    }
-
-    const match = path.match(
-      /^swaps\/([0-9a-f-]{36})(?:\/outputs\/(\d{1,2}))?$/,
-    );
-    // Deleting hides a finished video and blocks its output URLs. MadeByCue
-    // removes the files itself after 7 days; the cost keeps counting.
-    if (match && !match[2] && req.method === "DELETE") {
-      const [row] = await db
-        .update(swaps)
-        .set({ deletedAt: new Date(), updatedAt: new Date() })
-        .where(
-          and(
-            eq(swaps.id, match[1]),
-            eq(swaps.userId, user.id),
-            isNull(swaps.deletedAt),
-            inArray(swaps.status, TERMINAL),
-          ),
-        )
-        .returning({ id: swaps.id });
-      if (!row)
-        throw new HttpError("Only finished videos can be deleted.", 404);
-      return json({ deleted: true });
-    }
-    if (match && req.method === "GET") {
-      const [row] = await db
-        .select()
-        .from(swaps)
-        .where(
-          and(
-            eq(swaps.id, match[1]),
-            eq(swaps.userId, user.id),
-            isNull(swaps.deletedAt),
-          ),
+      if (path === "swaps" && req.method === "GET") {
+        const rows = await db
+          .select()
+          .from(swaps)
+          .where(and(eq(swaps.userId, user.id), isNull(swaps.deletedAt)))
+          .orderBy(desc(swaps.createdAt))
+          .limit(50);
+        const fresh = await Promise.all(
+          rows.map((row) => refresh(row).catch(() => row)),
         );
-      if (!row) throw new HttpError("Swap not found.", 404);
-      if (!match[2]) return json(publicSwap(await refresh(row)));
-      if (!row.taskId) throw new HttpError("This swap has no result yet.", 404);
-      const response = await upstream(
-        `/api/v1/tasks/${row.taskId}/outputs/${match[2]}`,
-        {
-          headers: req.headers.has("range")
-            ? { Range: req.headers.get("range")! }
-            : {},
-        },
-      );
-      const headers = new Headers({
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      });
-      for (const name of [
-        "content-type",
-        "content-length",
-        "content-range",
-        "accept-ranges",
-      ]) {
-        const value = response.headers.get(name);
-        if (value) headers.set(name, value);
+        return json({ swaps: fresh.map(publicSwap) });
       }
-      if (req.nextUrl.searchParams.has("download"))
-        headers.set(
-          "Content-Disposition",
-          'attachment; filename="recast-reel.mp4"',
-        );
-      return new NextResponse(response.body, {
-        status: response.status,
-        headers,
-      });
-    }
+      if (path === "swaps" && req.method === "POST")
+        return json(publicSwap(await createSwap(req, user.id)), 201);
+      if (path === "swaps/estimate" && req.method === "POST") {
+        if (!saved) await requirePlan(user.id);
+        const { estimate } = buildRequest(user.id, await body(req));
+        const { costCents } = await estimatePrice(estimate);
+        return json({ costCents });
+      }
 
-    // Direct uploads: the browser PUTs bytes to presigned storage URLs; this
-    // server only reserves, signs and confirms.
-    if (path === "uploads" && req.method === "POST") {
-      await requirePlan(user.id);
-      const input = await body(req);
-      const mime = String(input.mime),
-        size = Number(input.size);
-      const image = IMAGE_TYPES.includes(mime);
-      if (!image && !VIDEO_TYPES.includes(mime))
-        throw new HttpError(
-          image ? "Unsupported image." : "Upload an MP4 or MOV video.",
-        );
-      if (
-        !Number.isInteger(size) ||
-        size <= 0 ||
-        size > (image ? 20 : 1024) * 1024 * 1024
-      )
-        throw new HttpError(
-          image ? "Images must be under 20 MB." : "Videos must be under 1 GB.",
-          413,
-        );
-      const reservation = await cueJson<{
-        key: string;
-        uploadUrl?: string;
-        multipart?: { uploadId: string; partSize: number; partCount: number };
-      }>("/api/media/request-upload", {
-        name: String(input.name || "upload").slice(0, 200),
-        mime,
-        size,
-      });
-      return json(
-        {
-          key: reservation.key,
-          token: uploadToken(user.id, reservation.key, mime),
-          uploadUrl: reservation.uploadUrl
-            ? safeUploadUrl(reservation.uploadUrl)
-            : undefined,
-          multipart: reservation.multipart,
-        },
-        201,
+      const match = path.match(
+        /^swaps\/([0-9a-f-]{36})(?:\/outputs\/(\d{1,2}))?$/,
       );
-    }
-    if (path === "uploads/parts" && req.method === "POST") {
-      const input = await body(req);
-      const result = await cueJson<{
-        urls: { partNumber: number; url: string }[];
-      }>("/api/media/upload-parts", {
-        key: ownUpload(user.id, input),
-        uploadId: input.uploadId,
-        parts: input.parts,
-      });
-      return json({
-        urls: result.urls.map((part) => ({
-          partNumber: part.partNumber,
-          url: safeUploadUrl(part.url),
-        })),
-      });
-    }
-    if (path === "uploads/complete" && req.method === "POST") {
-      const input = await body(req, 256 * 1024);
-      return json(
-        await cueJson("/api/media/complete-upload", {
+      // Deleting hides a finished video and blocks its output URLs. MadeByCue
+      // removes the files itself after 7 days; the cost keeps counting.
+      if (match && !match[2] && req.method === "DELETE") {
+        const [row] = await db
+          .update(swaps)
+          .set({ deletedAt: new Date(), updatedAt: new Date() })
+          .where(
+            and(
+              eq(swaps.id, match[1]),
+              eq(swaps.userId, user.id),
+              isNull(swaps.deletedAt),
+              inArray(swaps.status, TERMINAL),
+            ),
+          )
+          .returning({ id: swaps.id });
+        if (!row)
+          throw new HttpError("Only finished videos can be deleted.", 404);
+        return json({ deleted: true });
+      }
+      if (match && req.method === "GET") {
+        const [row] = await db
+          .select()
+          .from(swaps)
+          .where(
+            and(
+              eq(swaps.id, match[1]),
+              eq(swaps.userId, user.id),
+              isNull(swaps.deletedAt),
+            ),
+          );
+        if (!row) throw new HttpError("Swap not found.", 404);
+        if (!match[2]) return json(publicSwap(await refresh(row)));
+        if (!row.taskId) throw new HttpError("This swap has no result yet.", 404);
+        const response = await withTaskCredential(row, () => upstream(
+          `/api/v1/tasks/${row.taskId}/outputs/${match[2]}`,
+          {
+            headers: req.headers.has("range")
+              ? { Range: req.headers.get("range")! }
+              : {},
+          },
+        ));
+        const headers = new Headers({
+          "Cache-Control": "private, no-store",
+          "X-Content-Type-Options": "nosniff",
+        });
+        for (const name of [
+          "content-type",
+          "content-length",
+          "content-range",
+          "accept-ranges",
+        ]) {
+          const value = response.headers.get(name);
+          if (value) headers.set(name, value);
+        }
+        if (req.nextUrl.searchParams.has("download"))
+          headers.set(
+            "Content-Disposition",
+            'attachment; filename="recast-reel.mp4"',
+          );
+        return new NextResponse(response.body, {
+          status: response.status,
+          headers,
+        });
+      }
+
+      // Direct uploads: the browser PUTs bytes to presigned storage URLs; this
+      // server only reserves, signs and confirms.
+      if (path === "uploads" && req.method === "POST") {
+        if (!saved) await requirePlan(user.id);
+        const input = await body(req);
+        const mime = String(input.mime),
+          size = Number(input.size);
+        const image = IMAGE_TYPES.includes(mime);
+        if (!image && !VIDEO_TYPES.includes(mime))
+          throw new HttpError(
+            image ? "Unsupported image." : "Upload an MP4 or MOV video.",
+          );
+        if (
+          !Number.isInteger(size) ||
+          size <= 0 ||
+          size > (image ? 20 : 1024) * 1024 * 1024
+        )
+          throw new HttpError(
+            image ? "Images must be under 20 MB." : "Videos must be under 1 GB.",
+            413,
+          );
+        const reservation = await cueJson<{
+          key: string;
+          uploadUrl?: string;
+          multipart?: { uploadId: string; partSize: number; partCount: number };
+        }>("/api/media/request-upload", {
+          name: String(input.name || "upload").slice(0, 200),
+          mime,
+          size,
+        });
+        return json(
+          {
+            key: reservation.key,
+            token: uploadToken(user.id, reservation.key, mime),
+            uploadUrl: reservation.uploadUrl
+              ? safeUploadUrl(reservation.uploadUrl)
+              : undefined,
+            multipart: reservation.multipart,
+          },
+          201,
+        );
+      }
+      if (path === "uploads/parts" && req.method === "POST") {
+        const input = await body(req);
+        const result = await cueJson<{
+          urls: { partNumber: number; url: string }[];
+        }>("/api/media/upload-parts", {
           key: ownUpload(user.id, input),
           uploadId: input.uploadId,
           parts: input.parts,
-        }),
-      );
-    }
-    if (path === "uploads/abort" && req.method === "POST") {
-      const input = await body(req);
-      return json(
-        await cueJson("/api/media/abort-upload", {
-          key: ownUpload(user.id, input),
-          uploadId: input.uploadId,
-        }),
-      );
-    }
-    if (path === "uploads/confirm" && req.method === "POST") {
-      const input = await body(req);
-      const confirmed = await cueJson<{ url: string; mime?: string }>(
-        "/api/media/confirm",
-        { key: ownUpload(user.id, input) },
-      );
-      const expectedKind = IMAGE_TYPES.includes(String(input.mime)) ? "image" : "video";
-      if (input.kind !== expectedKind || (confirmed.mime && confirmed.mime !== input.mime))
-        throw new HttpError("The uploaded media type does not match. Upload it again.", 422);
-      if (expectedKind === "image")
+        });
+        return json({
+          urls: result.urls.map((part) => ({
+            partNumber: part.partNumber,
+            url: safeUploadUrl(part.url),
+          })),
+        });
+      }
+      if (path === "uploads/complete" && req.method === "POST") {
+        const input = await body(req, 256 * 1024);
+        return json(
+          await cueJson("/api/media/complete-upload", {
+            key: ownUpload(user.id, input),
+            uploadId: input.uploadId,
+            parts: input.parts,
+          }),
+        );
+      }
+      if (path === "uploads/abort" && req.method === "POST") {
+        const input = await body(req);
+        return json(
+          await cueJson("/api/media/abort-upload", {
+            key: ownUpload(user.id, input),
+            uploadId: input.uploadId,
+          }),
+        );
+      }
+      if (path === "uploads/confirm" && req.method === "POST") {
+        const input = await body(req);
+        const confirmed = await cueJson<{ url: string; mime?: string }>(
+          "/api/media/confirm",
+          { key: ownUpload(user.id, input) },
+        );
+        const expectedKind = IMAGE_TYPES.includes(String(input.mime)) ? "image" : "video";
+        if (input.kind !== expectedKind || (confirmed.mime && confirmed.mime !== input.mime))
+          throw new HttpError("The uploaded media type does not match. Upload it again.", 422);
+        if (expectedKind === "image")
+          return json({
+            url: confirmed.url,
+            seconds: 0,
+            token: mediaToken(mediaOwner(user.id), confirmed.url, 0, "image"),
+          });
+        const measured = await uploadedVideoSeconds(confirmed.url);
+        if (
+          measured < MIN_SWAP_SECONDS - 0.5 ||
+          measured > MAX_SWAP_SECONDS + 0.5
+        )
+          throw new HttpError(
+            `Swaps need a video between ${MIN_SWAP_SECONDS} seconds and ${MAX_SWAP_SECONDS / 60} minutes long.`,
+            422,
+          );
+        const seconds = Math.min(
+          MAX_SWAP_SECONDS,
+          Math.max(MIN_SWAP_SECONDS, Math.ceil(measured)),
+        );
         return json({
           url: confirmed.url,
-          seconds: 0,
-          token: mediaToken(user.id, confirmed.url, 0, "image"),
+          seconds,
+          token: mediaToken(mediaOwner(user.id), confirmed.url, seconds, "video"),
         });
-      const measured = await uploadedVideoSeconds(confirmed.url);
-      if (
-        measured < MIN_SWAP_SECONDS - 0.5 ||
-        measured > MAX_SWAP_SECONDS + 0.5
-      )
-        throw new HttpError(
-          `Swaps need a video between ${MIN_SWAP_SECONDS} seconds and ${MAX_SWAP_SECONDS / 60} minutes long.`,
-          422,
-        );
-      const seconds = Math.min(
-        MAX_SWAP_SECONDS,
-        Math.max(MIN_SWAP_SECONDS, Math.ceil(measured)),
-      );
-      return json({
-        url: confirmed.url,
-        seconds,
-        token: mediaToken(user.id, confirmed.url, seconds, "video"),
-      });
-    }
-    throw new HttpError("Not found.", 404);
+      }
+      throw new HttpError("Not found.", 404);
+    });
   } catch (error) {
     const status = error instanceof HttpError ? error.status : 502;
     if (!(error instanceof HttpError))

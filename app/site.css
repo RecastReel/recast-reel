@@ -155,15 +155,7 @@
 .feature-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; }
 
 /* Pricing. */
-.pricing { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 8px; max-width: 1000px; margin: 0 auto; padding: 8px; border-radius: var(--radius-md); background: var(--surface); }
-.pricing-explainer { padding: clamp(20px, 4vw, 40px); }
-.pricing-explainer h3 { margin: 0 0 12px; font-size: var(--text-h3); font-weight: var(--weight-semibold); letter-spacing: -.02em; }
-.pricing-explainer > p { margin: 0 0 28px; color: var(--muted); line-height: 1.6; }
-.rate-list { display: grid; gap: 12px; margin: 0; }
-.rate-list div { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 16px 0 0; border-top: 1px solid var(--line-strong); }
-.rate-list dt { font-weight: var(--weight-medium); }
-.rate-list dd { margin: 0; font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
-.rate-list span { grid-column: 1 / -1; color: var(--muted); font-size: var(--text-label); }
+.pricing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 1000px; margin: 0 auto; padding: 8px; border-radius: var(--radius-md); background: var(--surface); }
 .price-card { display: flex; flex-direction: column; padding: clamp(24px, 4vw, 36px); border-radius: calc(var(--radius-md) - 8px); background: var(--raised); box-shadow: var(--shadow-default); }
 .price-card h3 { align-self: flex-start; margin: 0 0 20px; padding: 4px 12px; border-radius: var(--radius-pill); background: var(--blue-pill); color: var(--blue-ink); font-size: var(--text-caption); font-weight: var(--weight-semibold); }
 .price strong { font-size: clamp(2.75rem, 2.2rem + 2vw, 3.5rem); line-height: 1; font-weight: var(--weight-bold); letter-spacing: -.04em; }
@@ -303,3 +295,9 @@
  .motion-pending [data-intro], .motion-pending .site-header { opacity: 0; animation: motion-fallback 0s 4s forwards; }
 }
 @keyframes motion-fallback { to { opacity: 1; } }
+
+
+#api-key { scroll-margin-top: 90px; }
+.cue-key-form { display: grid; gap: 10px; }
+.cue-key-form input { width: min(100%, 460px); min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--canvas); color: var(--ink); font: inherit; }
+.cue-key-form .panel-actions { margin-top: 4px; }
