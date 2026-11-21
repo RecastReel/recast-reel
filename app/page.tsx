@@ -57,6 +57,19 @@ export default async function Landing() {
       : <p className="section-note">New examples are on the way.</p>}
     </section>
 
+    <section id="pricing" className="section" aria-labelledby="pricing-title">
+     <div className="section-head" data-reveal>
+      <h2 id="pricing-title">Pricing.</h2>
+      <p>Bring your own MadeByCue API key or subscribe for monthly credits.</p>
+     </div>
+     <div className="pricing" data-reveal>
+      <FreePlanCard>
+       <Link className="button-primary" href={session ? '/account#api-key' : '/login?mode=signup&next=%2Faccount%23api-key'}>Continue free</Link>
+      </FreePlanCard>
+      <MonthlyPlanCard signedIn={Boolean(session)} />
+     </div>
+    </section>
+
     <section id="features" className="section" aria-labelledby="modes-title">
      <div className="section-head" data-reveal>
       <h2 id="modes-title">Two ways to make a video.</h2>
@@ -99,19 +112,6 @@ export default async function Landing() {
      </ul>
     </section>
 
-    <section id="pricing" className="section" aria-labelledby="pricing-title">
-     <div className="section-head" data-reveal>
-      <h2 id="pricing-title">Pricing.</h2>
-      <p>Bring your own MadeByCue API key or subscribe for monthly credits.</p>
-     </div>
-     <div className="pricing" data-reveal>
-      <FreePlanCard>
-       <Link className="button-primary" href={session ? '/account#api-key' : '/login?mode=signup&next=%2Faccount%23api-key'}>Continue free</Link>
-      </FreePlanCard>
-      <MonthlyPlanCard signedIn={Boolean(session)} />
-     </div>
-    </section>
-
     <section id="faq" className="section faq-section" aria-labelledby="faq-title">
      <div className="section-head section-head-left" data-reveal>
       <h2 id="faq-title">Questions.</h2>
@@ -143,45 +143,21 @@ function Words({ text }: { text: string }) {
 /** A still mock of the studio, drawn with HTML so it stays sharp and themed. */
 function StudioPreview() {
  return (
-  <div className="window" role="img" aria-label="The Recast Reel studio: a character image and a source video, with the finished swap and a video being generated.">
+  <div className="window" role="img" aria-label="Recast Reel Studio composer showing a reference character and source video for a character swap.">
    <div className="window-bar">
     <span className="window-dots"><i /><i /><i /></span>
     <span className="window-crumbs">Studio <span>/</span> Character swap</span>
    </div>
-   <div className="window-body">
-    <aside className="window-side">
-     <span className="side-item"><i className="tone-blue"><Sparkles size={12} /></i>Create</span>
-     <span className="side-item is-on"><i className="tone-violet"><UserRound size={12} /></i>Swap character</span>
-     <span className="side-item"><i className="tone-amber"><Film size={12} /></i>Generate video</span>
-     <span className="side-item"><i className="tone-green"><Download size={12} /></i>My videos</span>
-     <span className="side-credits">62.40 credits left</span>
-    </aside>
-    <div className="window-main">
-     <span className="window-title">What are you making today?</span>
-     <span className="mock-seg mock-seg-lg"><i className="on">Swap character</i><i>Generate video</i></span>
-     <div className="mock-composer">
-      <div className="mock-tiles">
-       <span className="mock-tile"><small>Character image</small><img src="/showcase/character-reference.png" alt="" /></span>
-       <span className="mock-tile mock-tile-wide"><small>Source video</small><video src="/showcase/source-video.mp4#t=2" muted playsInline preload="metadata" /></span>
-      </div>
-      <p className="mock-prompt-text">Swap <mark>the man wearing a blue suit</mark> in the video with <mark>the old man in the reference image</mark>, matching the original motions.</p>
-      <span className="mock-row mock-row-end"><span className="mock-cost">≈ 12.00 credits</span><span className="mock-go is-ready"><ArrowRight size={14} /></span></span>
+   <div className="window-main">
+    <span className="window-title">What are you making today?</span>
+    <span className="mock-seg mock-seg-lg"><i className="on">Swap character</i><i>Generate video</i></span>
+    <div className="mock-composer">
+     <div className="mock-tiles">
+      <span className="mock-tile"><small>Character image</small><img src="/showcase/character-reference.png" alt="" /></span>
+      <span className="mock-tile mock-tile-wide"><small>Source video</small><video src="/showcase/source-video.mp4#t=2" muted playsInline preload="metadata" /></span>
      </div>
-    </div>
-    <div className="window-videos">
-     <small className="window-label">My videos</small>
-     <div className="mock-card">
-      <video src="/showcase/character-swap-loop.mp4" poster="/showcase/character-swap-loop.jpg" autoPlay muted loop playsInline preload="metadata" />
-      <span className="mock-card-row"><b>Character swap · 1:00</b><span className="pill pill-green">Ready</span></span>
-     </div>
-     <div className="mock-card mock-generated">
-      <span className="mock-media">
-       <video src="/showcase/bus-stop.mp4" poster="/showcase/bus-stop.jpg" autoPlay muted loop playsInline preload="metadata" />
-       <span className="mock-pending"><Sparkles size={16} /></span>
-      </span>
-      <span className="mock-card-row"><b>Bus stop crowd · 10s</b><span className="mock-status"><span className="pill pill-blue">Generating</span><span className="pill pill-green">Ready</span></span></span>
-      <span className="mock-bar"><span /></span>
-     </div>
+     <p className="mock-prompt-text">Swap <mark>the man wearing a blue suit</mark> in the video with <mark>the old man in the reference image</mark>, matching the original motions.</p>
+     <span className="mock-row mock-row-end"><span className="mock-cost">≈ 12.00 credits</span><span className="mock-go is-ready"><ArrowRight size={14} /></span></span>
     </div>
    </div>
   </div>

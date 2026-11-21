@@ -97,7 +97,7 @@ function reveals(root: HTMLElement) {
 }
 
 /** The window tilts back like a screen on a desk, then straightens as it
- * scrolls up; its contents settle in and the render bar keeps moving. */
+ * scrolls up; the composer settles into view. */
 function studioPreview(root: HTMLElement) {
  const win = root.querySelector('.window');
  if (!win) return;
@@ -105,33 +105,9 @@ function studioPreview(root: HTMLElement) {
   rotateX: 0, scale: 1, ease: 'none',
   scrollTrigger: { trigger: win, start: 'top bottom', end: 'top 20%', scrub: 0.6 },
  });
- const parts = win.querySelectorAll('.side-item, .mock-composer, .mock-card');
+ const parts = win.querySelectorAll('.mock-composer');
  gsap.from(parts, { y: 16, opacity: 0, ...ENTER, stagger: 0.08, delay: 0.3, scrollTrigger: { trigger: win, start: 'top 75%', once: true } });
  gsap.fromTo(win.querySelectorAll('.mock-prompt-text mark'), { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: 0.6, ease: 'power2.inOut', stagger: 0.35, delay: 0.9, scrollTrigger: { trigger: win, start: 'top 75%', once: true } });
- const card = win.querySelector('.mock-generated');
- if (card) generating(card, win);
-}
-
-/** The second video "renders": its bar fills, then the placeholder fades
- * into the finished video and the status flips to Ready. */
-function generating(card: Element, trigger: Element) {
- const video = card.querySelector('video');
- const pending = card.querySelector('.mock-pending');
- const bar = card.querySelector('.mock-bar');
- const fill = card.querySelector('.mock-bar span');
- const [busy, ready] = card.querySelectorAll('.mock-status .pill');
- if (!video || !pending || !bar || !fill || !busy || !ready) return;
- video.pause();
- gsap.set([pending, bar, busy], { opacity: 1 });
- gsap.set(ready, { opacity: 0 });
- gsap.set(fill, { width: '4%' });
- gsap.timeline({ scrollTrigger: { trigger, start: 'top 70%', once: true } })
-  .to(fill, { width: '100%', duration: 3.2, ease: 'power1.inOut' }, 0.6)
-  .add(() => { video.currentTime = 0; void video.play().catch(() => {}); })
-  .to(pending, { opacity: 0, duration: 0.7, ease: 'power2.out' })
-  .to(bar, { opacity: 0, duration: 0.4 }, '<')
-  .to(busy, { opacity: 0, duration: 0.25 }, '<')
-  .to(ready, { opacity: 1, duration: 0.35 }, '<0.15');
 }
 
 function showcase(root: HTMLElement) {

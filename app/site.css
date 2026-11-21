@@ -53,7 +53,7 @@
 /* Studio preview on a grainy band. */
 .stage { position: relative; isolation: isolate; padding: clamp(40px, 8vw, 120px) clamp(16px, 5vw, 120px); background: radial-gradient(120% 90% at 30% 15%, var(--band-a) 0%, transparent 60%), radial-gradient(90% 80% at 85% 90%, var(--band-a) 0%, transparent 55%), var(--band-b); overflow: hidden; }
 .stage::after { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--grain); opacity: .35; mix-blend-mode: overlay; pointer-events: none; }
-.window { max-width: 1200px; margin: 0 auto; overflow: hidden; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-window); font-size: 13px; }
+.window { max-width: 1000px; margin: 0 auto; overflow: hidden; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-window); font-size: 13px; }
 .window-bar { display: flex; align-items: center; gap: 18px; height: 38px; padding: 0 14px; color: var(--muted); font-size: 12px; }
 .window-dots { display: flex; gap: 7px; }
 .window-dots i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
@@ -61,22 +61,15 @@
 .window-dots i:nth-child(3) { background: #28c840; }
 .window-crumbs { color: var(--ink-2); }
 .window-crumbs span { margin: 0 6px; color: var(--muted); }
-.window-body { display: grid; grid-template-columns: 190px minmax(0, 1.25fr) minmax(0, 1fr); gap: 8px; padding: 0 8px 8px; }
-.window-side { display: flex; flex-direction: column; gap: 2px; padding: 6px 4px; }
-.side-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 9px; color: var(--ink-2); }
-.side-item.is-on { background: var(--raised); color: var(--ink); box-shadow: var(--shadow-subtle); }
-.side-item i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; }
-.side-credits { margin-top: auto; padding: 10px; color: var(--muted); font-size: 12px; }
-.window-main { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px 28px; border-radius: 10px; background: var(--raised); }
-.window-videos { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: var(--raised); }
-.window-title { font-size: 20px; font-weight: var(--weight-bold); letter-spacing: -.02em; }
-.window-label { color: var(--muted); font-size: 12px; }
-.mock-composer { width: 100%; max-width: 480px; padding: 14px; border: 1px solid var(--line); border-radius: 22px; background: var(--raised); box-shadow: var(--shadow-default); }
+.window-main { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; margin: 0 8px 8px; padding: clamp(24px, 5vw, 56px) 28px; border-radius: 10px; background: var(--raised); }
+.window-title { font-size: 20px; font-weight: var(--weight-bold); letter-spacing: -.02em; text-align: center; }
+.mock-composer { width: 100%; max-width: 640px; padding: 14px; border: 1px solid var(--line); border-radius: 22px; background: var(--raised); box-shadow: var(--shadow-default); }
 .mock-tiles { display: flex; gap: 10px; margin-bottom: 14px; }
 .mock-tile { display: flex; flex-direction: column; gap: 6px; }
 .mock-tile small { color: var(--muted); font-size: 10px; }
 .mock-tile img, .mock-tile video { display: block; width: 84px; height: 104px; border-radius: 10px; background: #fff; object-fit: cover; object-position: center top; }
-.mock-tile-wide video { width: 184px; object-fit: cover; background: #111; }
+.mock-tile-wide { flex: 0 1 184px; min-width: 0; }
+.mock-tile-wide video { width: 100%; background: #111; }
 .mock-prompt-text { display: block; margin: 0 0 12px; color: var(--ink); font-size: 13px; line-height: 1.6; }
 .mock-prompt-text mark { padding: 1px 3px; border-radius: 4px; background: linear-gradient(var(--blue-pill), var(--blue-pill)) no-repeat 0 0 / 100% 100%; color: var(--blue-ink); }
 .mock-row { display: flex; align-items: center; gap: 8px; }
@@ -89,22 +82,6 @@
 .mock-go { display: grid; place-items: center; width: 28px; height: 28px; margin-left: auto; border-radius: 50%; background: var(--surface); color: var(--muted); }
 .mock-row-end .mock-go { margin-left: 0; }
 .mock-go.is-ready { background: var(--ink); color: var(--on-ink); }
-.mock-card { display: flex; flex-direction: column; gap: 8px; padding: 6px 6px 10px; border-radius: 14px; background: var(--surface); }
-.mock-card img, .mock-card video, .mock-pending { display: block; width: 100%; aspect-ratio: 2.3 / 1; border-radius: 10px; object-fit: cover; }
-.mock-pending { display: grid; place-items: center; background: linear-gradient(110deg, var(--surface) 30%, var(--raised) 50%, var(--surface) 70%) 0 0 / 300% 100%, var(--surface); color: var(--muted); border: 1px solid var(--line); animation: mock-shimmer 2.4s linear infinite; }
-@keyframes mock-shimmer { to { background-position: -150% 0, 0 0; } }
-.mock-media { position: relative; display: block; }
-.mock-generated video, .mock-generated .mock-pending { aspect-ratio: 16 / 9; }
-.mock-generated .mock-pending { position: absolute; inset: 0; }
-/* Finished by default; the landing motion plays the render first. */
-.mock-generated .mock-pending, .mock-generated .mock-bar, .mock-status .pill-blue { opacity: 0; }
-.mock-status { display: grid; }
-.mock-status > * { grid-area: 1 / 1; justify-self: end; }
-.mock-card-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px; }
-.mock-card-row b { overflow: hidden; font-size: 12px; font-weight: var(--weight-medium); white-space: nowrap; text-overflow: ellipsis; }
-.mock-bar { height: 4px; margin: 0 4px; border-radius: 4px; background: var(--line-strong); overflow: hidden; }
-.mock-bar span { display: block; width: 62%; height: 100%; border-radius: inherit; background: var(--accent); }
-
 /* Sections. */
 .section { max-width: calc(var(--container) + 48px); margin: 0 auto; padding: var(--space-section) 24px 0; }
 .section-head { max-width: 640px; margin: 0 auto clamp(32px, 5vw, 56px); text-align: center; }
@@ -260,8 +237,6 @@
 @media (max-width: 960px) {
  .site-links { display: none; }
  .site-header { grid-template-columns: 1fr auto; }
- .window-body { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
- .window-side { display: none; }
  .modes, .pricing { grid-template-columns: 1fr; }
  .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
  .faq-section { grid-template-columns: 1fr; gap: 24px; }
@@ -274,7 +249,6 @@
  .logo-word { font-size: 16px; }
  .hero h1 br { display: none; }
  .stage { padding: 32px 12px; }
- .window-body { grid-template-columns: 1fr; min-height: 0; }
  .window-main { padding: 16px 12px; }
  .section { padding-left: 16px; padding-right: 16px; }
  .showcase-foot { flex-wrap: wrap; }
@@ -291,9 +265,6 @@
 }
 @media (max-width: 380px) {
  .site-actions a:not(.site-cta) { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
- .mock-pending { animation: none; }
 }
 
 /* Until the landing motion script runs, keep the intro hidden so it doesn't
